@@ -8,17 +8,18 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 
 /**
- * Only the ISBN is strictly required to be well formed. Title and author are mandatory
- * too, but the client is expected to have filled them either by hand or with the
- * Open Library preview, which is why they are plain strings here.
+ * The ISBN is the only mandatory field: a book can be registered from it alone and the
+ * rest is completed from the external catalogue. Anything supplied here takes precedence
+ * over what that catalogue says, so a librarian can always correct bad external data.
+ *
+ * <p>If neither source ends up providing a title and an author, the request is rejected
+ * with {@code INCOMPLETE_BOOK_DATA}.
  */
 public record CreateBookRequest(
 
-        @NotBlank(message = "El título es obligatorio")
         @Size(max = 250, message = "El título no puede superar los 250 caracteres")
         String title,
 
-        @NotBlank(message = "El autor es obligatorio")
         @Size(max = 180, message = "El autor no puede superar los 180 caracteres")
         String author,
 
