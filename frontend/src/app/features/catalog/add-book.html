@@ -1,0 +1,256 @@
+<div class="page wizard">
+  <header class="page__header">
+    <div class="wizard__heading">
+      <a class="wizard__back" routerLink="/catalogo" aria-label="Volver al catálogo">
+        <app-icon name="chevron-left" [size]="18" />
+      </a>
+      <div>
+        <h1 class="page__title">Agregar nuevo libro</h1>
+        <p class="page__subtitle">Busca por ISBN para completar la ficha automáticamente.</p>
+      </div>
+    </div>
+  </header>
+
+  <ol class="stepper">
+    @for (item of steps; track item.number) {
+      <li class="stepper__item" [class.is-active]="step() === item.number" [class.is-done]="step() > item.number">
+        <span class="stepper__bullet">
+          @if (step() > item.number) {
+            <app-icon name="check" [size]="14" />
+          } @else {
+            {{ item.number }}
+          }
+        </span>
+        <span class="stepper__label">{{ item.label }}</span>
+      </li>
+    }
+  </ol>
+
+  <!-- Step 1: look up by ISBN -->
+  @if (step() === 1) {
+    <section class="card">
+      <div class="card__body wizard__panel">
+        <form class="lookup" [formGroup]="isbnForm" (ngSubmit)="lookup()" novalidate>
+          <div class="field lookup__field">
+            <label class="field__label" for="isbn">Buscar por ISBN</label>
+            <div class="lookup__row">
+              <input
+                id="isbn"
+                class="input"
+                [class.is-invalid]="isbnForm.controls.isbn.invalid && isbnForm.controls.isbn.touched"
+                type="text"
+                inputmode="numeric"
+                placeholder="9780132350884"
+                formControlName="isbn"
+              />
+              <button type="submit" class="btn btn--primary" [disabled]="looking()">
+                @if (looking()) {
+                  <span class="spinner" aria-hidden="true"></span>
+                  Buscando…
+                } @else {
+                  <app-icon name="search" [size]="16" />
+                  Buscar información
+                }
+              </button>
+            </div>
+            @if (isbnForm.controls.isbn.invalid && isbnForm.controls.isbn.touched) {
+              <span class="field__error">Ingresa un ISBN válido de 10 o 13 dígitos.</span>
+            } @else {
+              <span class="field__hint">Se aceptan guiones y espacios: 978-0-13-235088-4.</span>
+            }
+          </div>
+        </form>
+
+        @if (lookupFailed()) {
+          <div class="note note--warning" role="status">
+            <app-icon name="alert-triangle" [size]="17" class="note__icon" />
+            <div class="lookup__fallback">
+              <span>{{ lookupFailed() }}</span>
+              <button type="button" class="btn btn--secondary btn--sm" (click)="fillByHand()">
+                Completar a mano
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- Step 2: review and correct -->
+  @if (step() === 2) {
+    <section class="card">
+      <div class="card__body wizard__panel">
+        @if (preview()) {
+          <div class="note" role="status">
+            <app-icon name="sparkles" [size]="17" class="note__icon" />
+            <span>
+              Información encontrada en el catálogo externo. Revísala y corrige lo que necesites: lo que
+              escribas tiene prioridad.
+            </span>
+          </div>
+
+          @if (preview()!.alreadyInCatalogue) {
+            <div class="note note--warning">
+              <app-icon name="alert-circle" [size]="17" class="note__icon" />
+              <span>Este ISBN ya está registrado en el catálogo. Al confirmar, la operación será rechazada.</span>
+            </div>
+          }
+        }
+
+        <form class="details" [formGroup]="detailsForm" novalidate>
+          <div class="details__preview">
+            <app-book-cover
+              class="details__cover"
+              [url]="detailsForm.controls.coverUrl.value"
+              [title]="detailsForm.controls.title.value"
+            />
+            <span class="details__isbn">ISBN {{ normalisedIsbn() }}</span>
+          </div>
+
+          <div class="details__fields">
+            <div class="field">
+              <label class="field__label" for="title">Título</label>
+              <input
+                id="title"
+                class="input"
+                [class.is-invalid]="invalidDetail('title')"
+                type="text"
+                formControlName="title"
+                placeholder="Clean Code"
+              />
+              @if (invalidDetail('title')) {
+                <span class="field__error">El título es obligatorio.</span>
+              }
+            </div>
+
+            <div class="field">
+              <label class="field__label" for="author">Autor</label>
+              <input
+                id="author"
+                class="input"
+                [class.is-invalid]="invalidDetail('author')"
+                type="text"
+                formControlName="author"
+                placeholder="Robert C. Martin"
+              />
+              @if (invalidDetail('author')) {
+                <span class="field__error">El autor es obligatorio.</span>
+              }
+            </div>
+
+            <div class="field">
+              <label class="field__label" for="year">Año de publicación</label>
+              <input
+                id="year"
+                class="input"
+                [class.is-invalid]="invalidDetail('publicationYear')"
+                type="number"
+                formControlName="publicationYear"
+                placeholder="2008"
+              />
+              @if (invalidDetail('publicationYear')) {
+                <span class="field__error">Ingresa un año válido.</span>
+              }
+            </div>
+
+            <div class="field">
+              <label class="field__label" for="description">Descripción</label>
+              <textarea
+                id="description"
+                class="textarea"
+                rows="3"
+                formControlName="description"
+                placeholder="Breve reseña del libro"
+              ></textarea>
+            </div>
+
+            @if (subjects().length) {
+              <div class="field">
+                <span class="field__label">Temas</span>
+                <div class="details__subjects">
+                  @for (subject of subjects(); track subject) {
+                    <span class="chip">
+                      {{ subject }}
+                      <button type="button" aria-label="Quitar tema" (click)="removeSubject(subject)">
+                        <app-icon name="close" [size]="12" />
+                      </button>
+                    </span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </form>
+      </div>
+
+      <footer class="wizard__actions">
+        <button type="button" class="btn btn--secondary" (click)="back()">Volver</button>
+        <span class="wizard__spacer"></span>
+        <a class="btn btn--ghost" routerLink="/catalogo">Cancelar</a>
+        <button type="button" class="btn btn--primary" (click)="toConfirmation()">
+          Siguiente
+          <app-icon name="arrow-right" [size]="16" />
+        </button>
+      </footer>
+    </section>
+  }
+
+  <!-- Step 3: confirm -->
+  @if (step() === 3) {
+    <section class="card">
+      <div class="card__body wizard__panel">
+        <div class="summary">
+          <app-book-cover
+            class="summary__cover"
+            [url]="detailsForm.controls.coverUrl.value"
+            [title]="detailsForm.controls.title.value"
+          />
+          <dl class="summary__facts">
+            <div>
+              <dt>Título</dt>
+              <dd>{{ detailsForm.controls.title.value }}</dd>
+            </div>
+            <div>
+              <dt>Autor</dt>
+              <dd>{{ detailsForm.controls.author.value }}</dd>
+            </div>
+            <div>
+              <dt>ISBN</dt>
+              <dd>{{ normalisedIsbn() }}</dd>
+            </div>
+            <div>
+              <dt>Año</dt>
+              <dd>{{ detailsForm.controls.publicationYear.value ?? '—' }}</dd>
+            </div>
+            @if (subjects().length) {
+              <div class="summary__wide">
+                <dt>Temas</dt>
+                <dd>{{ subjects().join(' · ') }}</dd>
+              </div>
+            }
+          </dl>
+        </div>
+
+        <div class="note">
+          <app-icon name="info" [size]="17" class="note__icon" />
+          <span>El libro quedará registrado como <strong>disponible</strong> y podrá prestarse de inmediato.</span>
+        </div>
+      </div>
+
+      <footer class="wizard__actions">
+        <button type="button" class="btn btn--secondary" (click)="back()">Volver</button>
+        <span class="wizard__spacer"></span>
+        <a class="btn btn--ghost" routerLink="/catalogo">Cancelar</a>
+        <button type="button" class="btn btn--primary" [disabled]="saving()" (click)="save()">
+          @if (saving()) {
+            <span class="spinner" aria-hidden="true"></span>
+            Guardando…
+          } @else {
+            <app-icon name="check" [size]="16" />
+            Confirmar y guardar
+          }
+        </button>
+      </footer>
+    </section>
+  }
+</div>
