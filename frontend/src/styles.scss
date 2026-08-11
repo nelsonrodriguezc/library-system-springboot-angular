@@ -1,0 +1,10 @@
+/**
+ * Global stylesheet.
+ *
+ * The Inter font files are listed in angular.json's `styles` array rather than imported
+ * here: they are plain CSS from node_modules, and Sass cannot `@use` a file whose name
+ * would become a numeric namespace.
+ */
+@use 'styles/tokens';
+@use 'styles/base';
+@use 'styles/components';
