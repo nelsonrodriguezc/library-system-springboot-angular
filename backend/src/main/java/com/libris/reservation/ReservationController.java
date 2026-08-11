@@ -3,6 +3,7 @@ package com.libris.reservation;
 import com.libris.auth.AuthenticatedUser;
 import com.libris.reservation.dto.CreateReservationRequest;
 import com.libris.reservation.dto.ReservationResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Reservas", description = "Lista de espera de títulos prestados")
 @RestController
 @RequestMapping("/api/reservations")
 public class ReservationController {

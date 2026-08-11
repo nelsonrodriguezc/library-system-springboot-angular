@@ -8,6 +8,7 @@ import com.libris.book.dto.CreateBookRequest;
 import com.libris.book.recommendation.BookRecommendationService;
 import com.libris.book.recommendation.dto.BookRecommendationResponse;
 import com.libris.shared.web.PageResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -32,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * The catalogue is readable by any signed-in account; only an ADMIN may change it.
  */
+@Tag(name = "Catálogo", description = "Consulta del catálogo, alta por ISBN y recomendaciones")
 @RestController
 @RequestMapping("/api/books")
 @Validated
