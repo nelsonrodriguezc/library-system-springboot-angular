@@ -1,0 +1,96 @@
+<div class="shell" [class.shell--nav-open]="sidebarOpen()">
+  <aside class="sidebar">
+    <a class="brand" routerLink="/inicio" (click)="sidebarOpen.set(false)">
+      <span class="brand__mark"><app-icon name="library" [size]="20" /></span>
+      <span class="brand__text">
+        <strong>Libris</strong>
+        <small>Library Management</small>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="Navegación principal">
+      @for (entry of navigation; track entry.path) {
+        <a
+          class="nav__link"
+          [routerLink]="entry.path"
+          routerLinkActive="is-active"
+          (click)="sidebarOpen.set(false)"
+        >
+          <app-icon [name]="entry.icon" [size]="18" />
+          <span>{{ entry.label }}</span>
+        </a>
+      }
+
+      @if (auth.isAdmin()) {
+        <p class="nav__heading">Administración</p>
+        @for (entry of administration; track entry.path) {
+          <a
+            class="nav__link"
+            [routerLink]="entry.path"
+            routerLinkActive="is-active"
+            (click)="sidebarOpen.set(false)"
+          >
+            <app-icon [name]="entry.icon" [size]="18" />
+            <span>{{ entry.label }}</span>
+          </a>
+        }
+      }
+    </nav>
+
+    <div class="account">
+      <button type="button" class="account__button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()">
+        <span class="avatar">{{ initials() }}</span>
+        <span class="account__identity">
+          <strong>{{ auth.displayName() }}</strong>
+          <small>{{ auth.roleLabel() }}</small>
+        </span>
+        <app-icon name="chevron-down" [size]="16" />
+      </button>
+
+      @if (menuOpen()) {
+        <div class="account__menu" role="menu">
+          <span class="account__email">{{ auth.profile()?.email }}</span>
+          <button type="button" class="account__action" role="menuitem" (click)="logout()">
+            <app-icon name="logout" [size]="16" />
+            Cerrar sesión
+          </button>
+        </div>
+      }
+    </div>
+  </aside>
+
+  <div class="backdrop" (click)="sidebarOpen.set(false)" aria-hidden="true"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button type="button" class="topbar__menu" aria-label="Abrir menú" (click)="toggleSidebar()">
+        <app-icon name="filter" [size]="18" />
+      </button>
+
+      <form class="topbar__search" (ngSubmit)="submitSearch()">
+        <label class="sr-only" for="global-search">Buscar en el catálogo</label>
+        <span class="field__icon"><app-icon name="search" [size]="17" /></span>
+        <input
+          id="global-search"
+          class="input input--with-icon"
+          type="search"
+          placeholder="Buscar por título, autor o ISBN…"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+          name="q"
+        />
+      </form>
+
+      @if (auth.isBlocked()) {
+        <span class="topbar__flag" title="Tu cuenta está bloqueada temporalmente para pedir préstamos">
+          <app-icon name="lock" [size]="15" />
+          Cuenta bloqueada
+        </span>
+      }
+    </header>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+</div>
