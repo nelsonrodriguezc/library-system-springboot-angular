@@ -1,5 +1,6 @@
 package com.libris.book;
 
+import com.libris.book.dto.BookPreviewResponse;
 import com.libris.book.dto.BookResponse;
 import com.libris.book.dto.BookSearchQuery;
 import com.libris.book.dto.CreateBookRequest;
@@ -46,6 +47,12 @@ public class BookController {
     @GetMapping("/subjects")
     public List<String> subjects() {
         return bookService.catalogueSubjects();
+    }
+
+    /** Preview from the external catalogue. Nothing is stored by this call. */
+    @GetMapping("/lookup/{isbn}")
+    public BookPreviewResponse lookup(@PathVariable String isbn) {
+        return bookService.preview(isbn);
     }
 
     @GetMapping("/{id}")
