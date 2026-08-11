@@ -11,6 +11,8 @@ spring:
       ddl-auto: validate
     properties:
       hibernate.jdbc.time_zone: UTC
+      # Loads the subjects of a whole page of books in one extra query instead of one per row.
+      hibernate.default_batch_fetch_size: 32
   flyway:
     enabled: true
     locations: classpath:db/migration
