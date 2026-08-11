@@ -18,6 +18,14 @@ public interface BookRepository extends JpaRepository<Book, Long>, JpaSpecificat
     @EntityGraph(attributePaths = "subjects")
     Optional<Book> findWithSubjectsById(Long id);
 
+    /**
+     * Whole catalogue with subjects loaded, used to build the recommendation vectors.
+     * One query instead of one per book.
+     */
+    @EntityGraph(attributePaths = "subjects")
+    @Query("select b from Book b")
+    List<Book> findAllWithSubjects();
+
     /** Distinct subjects across the catalogue, used to populate the subject filter. */
     @Query("select distinct s from Book b join b.subjects s order by s")
     List<String> findDistinctSubjects();
