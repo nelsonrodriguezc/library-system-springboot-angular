@@ -1,0 +1,116 @@
+/**
+ * Design tokens for Libris.
+ *
+ * Every colour, radius and shadow used anywhere in the interface is declared here, so a
+ * change to the palette is a change to one file. Values are exposed as CSS custom
+ * properties rather than SCSS variables so components can read them at runtime and the
+ * dark surfaces of the sidebar can reuse the same names.
+ */
+:root {
+  /* --- Brand ------------------------------------------------------------- */
+  --brand-navy: #1e2a5a;
+  --brand-navy-deep: #182248;
+  --brand-navy-soft: #2a3670;
+  --brand-indigo: #4f46e5;
+  --brand-indigo-strong: #4338ca;
+  --brand-indigo-soft: #eef2ff;
+  --brand-indigo-border: #dfe3fb;
+
+  /* --- Surfaces ---------------------------------------------------------- */
+  --surface-page: #f7f8fc;
+  --surface-card: #ffffff;
+  --surface-muted: #fafbff;
+  --surface-sunken: #f2f4fa;
+  --border-subtle: #e8eaf2;
+  --border-strong: #d7dbe9;
+
+  /* --- Text -------------------------------------------------------------- */
+  --text-strong: #1f2540;
+  --text-body: #454b6b;
+  --text-muted: #6b7394;
+  --text-faint: #9aa1bf;
+  --text-on-dark: #ffffff;
+  --text-on-dark-muted: #a9b3d9;
+
+  /* --- Semantic states, each as a background / border / foreground trio --- */
+  --state-success-bg: #ecfdf5;
+  --state-success-border: #c9f0df;
+  --state-success-fg: #059669;
+
+  --state-warning-bg: #fffbeb;
+  --state-warning-border: #fde9b8;
+  --state-warning-fg: #b45309;
+
+  --state-danger-bg: #fef2f2;
+  --state-danger-border: #fbd5d5;
+  --state-danger-fg: #dc2626;
+
+  --state-info-bg: #eef2ff;
+  --state-info-border: #dfe3fb;
+  --state-info-fg: #4f46e5;
+
+  --state-neutral-bg: #f3f4f8;
+  --state-neutral-border: #e3e6ef;
+  --state-neutral-fg: #6b7394;
+
+  /* --- Chart series ------------------------------------------------------ */
+  --chart-active: #10b981;
+  --chart-due-soon: #f59e0b;
+  --chart-overdue: #ef4444;
+  --chart-returned: #94a3b8;
+  --chart-line: #4f46e5;
+
+  /* --- Shape ------------------------------------------------------------- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-pill: 999px;
+
+  /* --- Elevation --------------------------------------------------------- */
+  --shadow-xs: 0 1px 2px rgba(31, 37, 64, 0.04);
+  --shadow-sm: 0 1px 3px rgba(31, 37, 64, 0.06), 0 1px 2px rgba(31, 37, 64, 0.04);
+  --shadow-md: 0 4px 16px rgba(31, 37, 64, 0.08);
+  --shadow-lg: 0 12px 32px rgba(31, 37, 64, 0.12);
+  --shadow-focus: 0 0 0 3px rgba(79, 70, 229, 0.18);
+
+  /* --- Spacing scale ----------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* --- Layout ------------------------------------------------------------ */
+  --sidebar-width: 248px;
+  --topbar-height: 68px;
+  --content-max-width: 1400px;
+
+  /* --- Type -------------------------------------------------------------- */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+  --text-3xl: 34px;
+
+  /* --- Motion ------------------------------------------------------------ */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.3, 1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+}
+
+/* Respects a reader who asked the operating system for less movement. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+  }
+}
