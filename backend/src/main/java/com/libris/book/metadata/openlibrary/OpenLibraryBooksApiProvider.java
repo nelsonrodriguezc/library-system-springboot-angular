@@ -3,6 +3,7 @@ package com.libris.book.metadata.openlibrary;
 import com.libris.book.metadata.BookMetadataSource;
 import com.libris.book.metadata.ExternalBookData;
 import com.libris.book.metadata.PublishDateParser;
+import com.libris.book.metadata.SubjectSanitizer;
 import com.libris.book.metadata.openlibrary.dto.BooksApiRecord;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ public class OpenLibraryBooksApiProvider implements BookMetadataSource {
     private static final ParameterizedTypeReference<Map<String, BooksApiRecord>> RESPONSE_TYPE =
             new ParameterizedTypeReference<>() {
             };
+    private static final int MAX_SUBJECTS = 10;
 
     private final RestClient restClient;
     private final OpenLibraryProperties properties;
@@ -99,12 +101,9 @@ public class OpenLibraryBooksApiProvider implements BookMetadataSource {
         if (subjects == null) {
             return List.of();
         }
-        return subjects.stream()
-                .map(BooksApiRecord.NamedEntry::name)
-                .filter(name -> name != null && !name.isBlank())
-                .distinct()
-                .limit(12)
-                .toList();
+        // Shelving codes travel with the real subjects; see SubjectSanitizer.
+        return SubjectSanitizer.clean(
+                subjects.stream().map(BooksApiRecord.NamedEntry::name).toList(), MAX_SUBJECTS);
     }
 
     private String coverUrl(String isbn, BooksApiRecord.Cover cover) {
