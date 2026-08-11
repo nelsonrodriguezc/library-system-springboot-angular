@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es"
+      th:replace="~{email/_layout :: page(
+          subject='Tu préstamo está por vencer',
+          preheader=${bookTitle} + ' vence el ' + ${dueDate},
+          body=~{::content})}">
+<body>
+<div th:fragment="content" th:remove="tag">
+
+    <h1 style="margin:0 0 16px 0; font-size:22px; font-weight:700; color:#1f2540;">
+        Tu préstamo está por vencer
+    </h1>
+
+    <p style="margin:0; font-size:15px; line-height:1.7; color:#454b6b;">
+        Hola <strong th:text="${borrowerName}">Lector</strong>, te queda poco tiempo para devolver este libro.
+    </p>
+
+    <div th:replace="~{email/_components :: bookCard}"></div>
+
+    <div th:replace="~{email/_components :: callout('#fffbeb', '#fde9b8',
+        'Vence el <strong>' + ${dueDate} + '</strong>'
+        + (${daysLeft} == 1 ? ', es decir mañana.'
+                            : ', dentro de ' + ${daysLeft} + ' días.'))}"></div>
+
+    <p style="margin:16px 0 0 0; font-size:14px; line-height:1.7; color:#6b7394;">
+        Devolverlo a tiempo evita que se registre un atraso en tu cuenta.
+    </p>
+
+    <div th:replace="~{email/_components :: button('Ver mis préstamos', ${appUrl} + '/mis-prestamos')}"></div>
+
+</div>
+</body>
+</html>
