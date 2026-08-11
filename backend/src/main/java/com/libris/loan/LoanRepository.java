@@ -1,6 +1,9 @@
 package com.libris.loan;
 
+import com.libris.loan.projection.EmailCount;
+import com.libris.loan.projection.MonthlyLoanCount;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -44,4 +47,57 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
 
     /** Overdue loans that have not been chased yet, for the same reason. */
     List<Loan> findByReturnDateIsNullAndOverdueNoticeSentAtIsNullAndDueDateBefore(LocalDate date);
+
+    // --- Aggregates behind the administration dashboard ---------------------------
+
+    long countByReturnDateIsNull();
+
+    long countByReturnDateIsNotNull();
+
+    long countByReturnDateIsNullAndDueDateBefore(LocalDate date);
+
+    long countByReturnDateIsNullAndDueDateBetween(LocalDate from, LocalDate to);
+
+    /** Open loans per account for a whole page of users, in a single query. */
+    @Query("""
+            select lower(l.borrowerEmail) as email, count(l) as total
+            from Loan l
+            where l.returnDate is null and lower(l.borrowerEmail) in :emails
+            group by lower(l.borrowerEmail)
+            """)
+    List<EmailCount> countActiveLoansByEmails(@Param("emails") Collection<String> emails);
+
+    /** Late returns inside the window per account, likewise batched. */
+    @Query("""
+            select lower(l.borrowerEmail) as email, count(l) as total
+            from Loan l
+            where l.returnDate is not null
+              and l.returnDate > l.dueDate
+              and l.returnDate >= :since
+              and lower(l.borrowerEmail) in :emails
+            group by lower(l.borrowerEmail)
+            """)
+    List<EmailCount> countLateReturnsByEmails(@Param("emails") Collection<String> emails,
+                                              @Param("since") LocalDate since);
+
+    /** Accounts with the most late returns in the window, worst first. */
+    @Query("""
+            select lower(l.borrowerEmail) as email, count(l) as total
+            from Loan l
+            where l.returnDate is not null
+              and l.returnDate > l.dueDate
+              and l.returnDate >= :since
+            group by lower(l.borrowerEmail)
+            order by count(l) desc
+            """)
+    List<EmailCount> findTopLateReturners(@Param("since") LocalDate since, Pageable pageable);
+
+    @Query(value = """
+            select to_char(loan_date, 'YYYY-MM') as month, count(*) as total
+            from loan
+            where loan_date >= :since
+            group by 1
+            order by 1
+            """, nativeQuery = true)
+    List<MonthlyLoanCount> countLoansByMonthSince(@Param("since") LocalDate since);
 }
