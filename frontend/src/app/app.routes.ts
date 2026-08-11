@@ -46,6 +46,17 @@ export const routes: Routes = [
         loadComponent: () => import('./features/catalog/catalog').then((m) => m.Catalog),
       },
       {
+        path: 'mis-prestamos',
+        title: 'Mis préstamos · Libris',
+        loadComponent: () => import('./features/loans/my-loans').then((m) => m.MyLoans),
+      },
+      {
+        path: 'mis-reservas',
+        title: 'Mis reservas · Libris',
+        loadComponent: () =>
+          import('./features/reservations/my-reservations').then((m) => m.MyReservations),
+      },
+      {
         path: 'admin',
         canActivate: [adminGuard],
         children: [
