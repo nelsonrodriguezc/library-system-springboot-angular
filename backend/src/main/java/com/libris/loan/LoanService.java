@@ -37,6 +37,7 @@ public class LoanService {
     private final BookRepository books;
     private final AppUserRepository users;
     private final List<LoanRule> rules;
+    private final List<LoanLifecycleListener> lifecycleListeners;
     private final DueDateCalculator dueDateCalculator;
     private final LoanStatusResolver statusResolver;
     private final OverdueBlockPolicy overdueBlockPolicy;
@@ -47,6 +48,7 @@ public class LoanService {
                        BookRepository books,
                        AppUserRepository users,
                        List<LoanRule> rules,
+                       List<LoanLifecycleListener> lifecycleListeners,
                        DueDateCalculator dueDateCalculator,
                        LoanStatusResolver statusResolver,
                        OverdueBlockPolicy overdueBlockPolicy,
@@ -56,6 +58,7 @@ public class LoanService {
         this.books = books;
         this.users = users;
         this.rules = rules;
+        this.lifecycleListeners = lifecycleListeners;
         this.dueDateCalculator = dueDateCalculator;
         this.statusResolver = statusResolver;
         this.overdueBlockPolicy = overdueBlockPolicy;
@@ -76,6 +79,7 @@ public class LoanService {
         Loan loan = loans.save(new Loan(
                 book, borrower.getName(), borrower.getEmail(), today, dueDateCalculator.dueDateFor(today)));
         book.markLoaned();
+        lifecycleListeners.forEach(listener -> listener.onLoanCreated(loan));
 
         // Delivered after the transaction commits, so no e-mail can ever describe a loan
         // that was rolled back. See NotificationEventListener.
@@ -108,7 +112,9 @@ public class LoanService {
 
         LocalDate today = LocalDate.now(clock);
         loan.markReturned(today);
+        // Default outcome is back on the shelf; a listener may hold it for the waiting list.
         loan.getBook().markAvailable();
+        lifecycleListeners.forEach(listener -> listener.onLoanReturned(loan));
 
         users.findByEmailIgnoreCase(loan.getBorrowerEmail()).ifPresent(borrower -> {
             if (overdueBlockPolicy.applyAfterReturn(borrower, loan)) {
