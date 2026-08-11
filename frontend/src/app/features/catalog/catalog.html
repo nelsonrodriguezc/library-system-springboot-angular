@@ -1,0 +1,149 @@
+<div class="page">
+  <header class="page__header">
+    <div>
+      <h1 class="page__title">Catálogo</h1>
+      <p class="page__subtitle">Explora los títulos de la biblioteca y su disponibilidad.</p>
+    </div>
+
+    @if (auth.isAdmin()) {
+      <a class="btn btn--primary" routerLink="/catalogo/nuevo">
+        <app-icon name="plus" [size]="16" />
+        Agregar libro
+      </a>
+    }
+  </header>
+
+  <div class="toolbar">
+    <form class="toolbar__search" (ngSubmit)="submitSearch()">
+      <label class="sr-only" for="catalog-search">Buscar en el catálogo</label>
+      <span class="field__icon"><app-icon name="search" [size]="17" /></span>
+      <input
+        id="catalog-search"
+        class="input input--with-icon"
+        type="search"
+        placeholder="Buscar por título, autor o ISBN…"
+        [ngModel]="searchDraft()"
+        (ngModelChange)="searchDraft.set($event)"
+        name="search"
+      />
+    </form>
+
+    <div class="toolbar__filters">
+      <label class="sr-only" for="filter-status">Estado</label>
+      <select
+        id="filter-status"
+        class="select"
+        [ngModel]="filters().status"
+        (ngModelChange)="changeStatus($event)"
+        name="status"
+      >
+        <option value="">Estado: todos</option>
+        <option value="DISPONIBLE">Disponible</option>
+        <option value="PRESTADO">Prestado</option>
+        <option value="RESERVADO">Reservado</option>
+      </select>
+
+      <label class="sr-only" for="filter-subject">Tema</label>
+      <select
+        id="filter-subject"
+        class="select"
+        [ngModel]="filters().subject"
+        (ngModelChange)="changeSubject($event)"
+        name="subject"
+      >
+        <option value="">Tema: todos</option>
+        @for (subject of subjects(); track subject) {
+          <option [value]="subject">{{ subject }}</option>
+        }
+      </select>
+
+      <label class="sr-only" for="filter-sort">Ordenar por</label>
+      <select
+        id="filter-sort"
+        class="select"
+        [ngModel]="filters().sort"
+        (ngModelChange)="changeSort($event)"
+        name="sort"
+      >
+        @for (option of sortOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+
+      @if (hasFilters()) {
+        <button type="button" class="btn btn--ghost btn--sm" (click)="clearFilters()">
+          <app-icon name="close" [size]="15" />
+          Limpiar
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="grid catalog__grid" aria-busy="true" aria-label="Cargando catálogo">
+      @for (placeholder of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]; track placeholder) {
+        <div class="card skeleton-card">
+          <app-skeleton class="skeleton-card__cover" />
+          <app-skeleton style="width: 80%" />
+          <app-skeleton style="width: 55%; height: 11px" />
+        </div>
+      }
+    </div>
+  } @else if (failed()) {
+    <div class="card">
+      <app-error-state
+        title="No pudimos cargar el catálogo"
+        detail="Ocurrió un problema al consultar los libros."
+        (retry)="load()"
+      />
+    </div>
+  } @else if (!result()?.content?.length) {
+    <div class="card">
+      <app-empty-state
+        icon="library"
+        title="No encontramos libros"
+        [detail]="
+          hasFilters()
+            ? 'Ningún título coincide con los filtros aplicados.'
+            : 'Todavía no hay libros registrados en el catálogo.'
+        "
+      >
+        @if (hasFilters()) {
+          <button type="button" class="btn btn--secondary btn--sm" (click)="clearFilters()">
+            Limpiar filtros
+          </button>
+        }
+      </app-empty-state>
+    </div>
+  } @else {
+    <div class="grid catalog__grid">
+      @for (book of result()!.content; track book.id) {
+        <app-book-card [book]="book" (open)="selected.set($event)" />
+      }
+    </div>
+
+    <footer class="catalog__footer">
+      <span class="catalog__count">
+        {{ result()!.totalElements }} {{ result()!.totalElements === 1 ? 'libro' : 'libros' }}
+      </span>
+      <app-pagination
+        [page]="result()!.page"
+        [totalPages]="result()!.totalPages"
+        (goTo)="goToPage($event)"
+      />
+    </footer>
+  }
+</div>
+
+@if (selected(); as book) {
+  <app-book-detail
+    [book]="book"
+    [isAdmin]="auth.isAdmin()"
+    [blocked]="auth.isBlocked()"
+    [busy]="busyBookId() === book.id"
+    (close)="selected.set(null)"
+    (borrow)="borrow($event)"
+    (reserve)="reserve($event)"
+    (remove)="remove($event)"
+  />
+}

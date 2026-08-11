@@ -33,6 +33,18 @@ export const routes: Routes = [
         title: 'Inicio · Libris',
         loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
       },
+      // The more specific path is declared first: routes are matched in order.
+      {
+        path: 'catalogo/nuevo',
+        canActivate: [adminGuard],
+        title: 'Agregar libro · Libris',
+        loadComponent: () => import('./features/catalog/add-book').then((m) => m.AddBook),
+      },
+      {
+        path: 'catalogo',
+        title: 'Catálogo · Libris',
+        loadComponent: () => import('./features/catalog/catalog').then((m) => m.Catalog),
+      },
       {
         path: 'admin',
         canActivate: [adminGuard],
