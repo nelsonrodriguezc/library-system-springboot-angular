@@ -1,12 +1,15 @@
 package com.libris.shared.web;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
 import java.util.Map;
 
 /**
  * Single error shape returned by the whole API, so a client never has to guess how a
- * failure is rendered. {@code fieldErrors} is only present on validation failures.
+ * failure is rendered. {@code fieldErrors} is the one field that is omitted rather than
+ * null, because it only means anything on a validation failure.
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record ApiError(
         Instant timestamp,
         int status,
