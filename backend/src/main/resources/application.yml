@@ -42,6 +42,12 @@ management:
     health:
       probes:
         enabled: true
+  health:
+    # The application is perfectly usable when the SMTP server is down: mail is sent
+    # asynchronously and out of band. Tying readiness to it would take the API out of
+    # rotation over a notification problem.
+    mail:
+      enabled: false
 
 springdoc:
   swagger-ui:
