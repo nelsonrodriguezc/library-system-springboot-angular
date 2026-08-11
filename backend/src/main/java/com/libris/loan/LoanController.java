@@ -4,6 +4,7 @@ import com.libris.auth.AuthenticatedUser;
 import com.libris.loan.dto.CreateLoanRequest;
 import com.libris.loan.dto.LoanResponse;
 import com.libris.shared.web.PageResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Préstamos", description = "Registro, consulta y devolución de préstamos")
 @RestController
 @RequestMapping("/api/loans")
 public class LoanController {

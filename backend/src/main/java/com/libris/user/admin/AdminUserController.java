@@ -2,6 +2,7 @@ package com.libris.user.admin;
 
 import com.libris.shared.web.PageResponse;
 import com.libris.user.admin.dto.UserSummaryResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
  * require them: an ADMIN has to be able to see who is blocked and to lift a block early.
  * Both are documented in the README.
  */
+@Tag(name = "Administración", description = "Gestión de cuentas y bloqueos")
 @RestController
 @RequestMapping("/api/admin/users")
 public class AdminUserController {

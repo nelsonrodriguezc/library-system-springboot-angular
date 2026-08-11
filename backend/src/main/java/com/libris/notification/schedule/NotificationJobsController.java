@@ -1,5 +1,6 @@
 package com.libris.notification.schedule;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Map;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
  * demonstrated: waiting until 08:00 to see a reminder land in MailHog is not a reasonable
  * way to review the feature. Sitting under {@code /api/admin} it is ADMIN-only.
  */
+@Tag(name = "Administración", description = "Ejecución manual de las tareas de correo")
 @RestController
 @RequestMapping("/api/admin/notifications")
 public class NotificationJobsController {

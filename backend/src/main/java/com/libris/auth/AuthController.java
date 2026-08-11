@@ -3,6 +3,7 @@ package com.libris.auth;
 import com.libris.auth.dto.AuthResponse;
 import com.libris.auth.dto.LoginRequest;
 import com.libris.auth.dto.RegisterRequest;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Autenticación", description = "Registro y emisión de tokens JWT")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
