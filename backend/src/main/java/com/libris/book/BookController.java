@@ -1,11 +1,16 @@
 package com.libris.book;
 
+import com.libris.auth.AuthenticatedUser;
 import com.libris.book.dto.BookPreviewResponse;
 import com.libris.book.dto.BookResponse;
 import com.libris.book.dto.BookSearchQuery;
 import com.libris.book.dto.CreateBookRequest;
+import com.libris.book.recommendation.BookRecommendationService;
+import com.libris.book.recommendation.dto.BookRecommendationResponse;
 import com.libris.shared.web.PageResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -13,6 +18,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,12 +34,15 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/books")
+@Validated
 public class BookController {
 
     private final BookService bookService;
+    private final BookRecommendationService recommendationService;
 
-    public BookController(BookService bookService) {
+    public BookController(BookService bookService, BookRecommendationService recommendationService) {
         this.bookService = bookService;
+        this.recommendationService = recommendationService;
     }
 
     @GetMapping
@@ -47,6 +57,17 @@ public class BookController {
     @GetMapping("/subjects")
     public List<String> subjects() {
         return bookService.catalogueSubjects();
+    }
+
+    /**
+     * Titles similar to what the reader has borrowed before. Empty for a reader with no
+     * history: there is nothing honest to suggest yet.
+     */
+    @GetMapping("/recommendations")
+    public List<BookRecommendationResponse> recommendations(
+            @AuthenticationPrincipal AuthenticatedUser caller,
+            @RequestParam(defaultValue = "3") @Min(1) @Max(12) int limit) {
+        return recommendationService.recommendFor(caller, limit);
     }
 
     /** Preview from the external catalogue. Nothing is stored by this call. */
