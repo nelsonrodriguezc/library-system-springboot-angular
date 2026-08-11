@@ -1,0 +1,150 @@
+<div class="page">
+  <header class="page__header">
+    <div>
+      <h1 class="page__title">¡Hola, {{ firstName() }}! 👋</h1>
+      <p class="page__subtitle">Este es el estado de tus préstamos y del catálogo.</p>
+    </div>
+  </header>
+
+  @if (auth.isBlocked()) {
+    <div class="note note--danger">
+      <app-icon name="lock" [size]="17" class="note__icon" />
+      <span>
+        Tu cuenta está bloqueada temporalmente para pedir préstamos por acumular devoluciones fuera de
+        plazo. Puedes seguir consultando el catálogo y devolver lo que tengas.
+      </span>
+    </div>
+  }
+
+  @if (failed()) {
+    <div class="card">
+      <app-error-state (retry)="load()" />
+    </div>
+  } @else {
+    <section class="grid stats">
+      @if (loading()) {
+        @for (placeholder of [1, 2, 3, 4]; track placeholder) {
+          <div class="card stat-skeleton">
+            <app-skeleton style="width: 60%; height: 12px" />
+            <app-skeleton style="width: 40%; height: 30px" />
+          </div>
+        }
+      } @else {
+        <app-stat-card
+          label="Mis préstamos activos"
+          [value]="activeLoans().length"
+          icon="book"
+          tone="info"
+          [hint]="'Hasta 3 simultáneos'"
+        />
+        <app-stat-card
+          label="Por vencer (próx. 3 días)"
+          [value]="dueSoon().length"
+          icon="clock"
+          tone="warning"
+          [hint]="dueSoon().length ? 'Conviene devolverlos pronto' : 'Nada urgente'"
+        />
+        <app-stat-card
+          label="Vencidos"
+          [value]="overdue().length"
+          icon="alert-triangle"
+          tone="danger"
+          [hint]="overdue().length ? 'Suman atrasos a tu cuenta' : 'Todo al día'"
+        />
+        <app-stat-card
+          label="Libros disponibles"
+          [value]="availableBooks()"
+          icon="library"
+          tone="success"
+          hint="Listos para pedir prestado"
+        />
+      }
+    </section>
+
+    <div class="grid columns">
+      <section class="card">
+        <header class="card__header">
+          <h2 class="card__title">Próximos a vencer</h2>
+          <a class="card__link" routerLink="/mis-prestamos">
+            Ver todos <app-icon name="arrow-right" [size]="15" />
+          </a>
+        </header>
+
+        @if (loading()) {
+          <div class="list">
+            @for (placeholder of [1, 2, 3]; track placeholder) {
+              <div class="list__row">
+                <app-skeleton style="width: 36px; height: 48px" />
+                <app-skeleton style="flex: 1" />
+              </div>
+            }
+          </div>
+        } @else if (!upcoming().length) {
+          <app-empty-state
+            icon="check"
+            title="No tienes préstamos pendientes"
+            detail="Cuando pidas un libro aparecerá aquí con su fecha límite."
+          />
+        } @else {
+          <ul class="list">
+            @for (loan of upcoming(); track loan.id) {
+              <li class="list__row">
+                <app-book-cover class="list__cover" [url]="loan.book.coverUrl" [title]="loan.book.title" />
+                <div class="list__text">
+                  <strong>{{ loan.book.title }}</strong>
+                  <span>{{ loan.book.author }}</span>
+                </div>
+                <div class="list__meta">
+                  <app-status-badge [status]="loan.status" />
+                  <small>{{ loan.dueDate | date: 'dd MMM yyyy' }} · {{ dueHint(loan) }}</small>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <section class="card recommendations">
+        <header class="card__header">
+          <h2 class="card__title">
+            <app-icon name="sparkles" [size]="17" />
+            Recomendaciones para ti
+          </h2>
+        </header>
+
+        <div class="card__body">
+          @if (!recommendations().length) {
+            <app-empty-state
+              icon="sparkles"
+              title="Aún no podemos recomendarte"
+              detail="Pide prestado tu primer libro y usaremos sus temas para sugerirte otros."
+            />
+          } @else {
+            <p class="recommendations__basis">Basado en los temas de tus préstamos anteriores.</p>
+            <ul class="list">
+              @for (item of recommendations(); track item.book.id) {
+                <li class="list__row">
+                  <app-book-cover
+                    class="list__cover"
+                    [url]="item.book.coverUrl"
+                    [title]="item.book.title"
+                  />
+                  <div class="list__text">
+                    <strong>{{ item.book.title }}</strong>
+                    <span>{{ item.book.author }}</span>
+                    <div class="chips">
+                      @for (subject of item.matchedSubjects; track subject) {
+                        <span class="chip">{{ subject }}</span>
+                      }
+                    </div>
+                  </div>
+                </li>
+              }
+            </ul>
+            <a class="btn btn--secondary btn--sm" routerLink="/catalogo">Ver catálogo completo</a>
+          }
+        </div>
+      </section>
+    </div>
+  }
+</div>
