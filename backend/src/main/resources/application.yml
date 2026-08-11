@@ -83,6 +83,8 @@ libris:
     base-url: ${OPEN_LIBRARY_BASE_URL:https://openlibrary.org}
     covers-url: ${OPEN_LIBRARY_COVERS_URL:https://covers.openlibrary.org}
     timeout-seconds: ${OPEN_LIBRARY_TIMEOUT_SECONDS:3}
+    # Open Library throttles clients that do not identify themselves.
+    user-agent: ${OPEN_LIBRARY_USER_AGENT:Libris/1.0 (library loan management technical test)}
 
 ---
 # Demo profile: loads extra seed data so the dashboards are not empty.
