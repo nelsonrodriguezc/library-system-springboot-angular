@@ -28,6 +28,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # --- IDE / editors ---------------------------------------------------------
+.claude/
 .idea/
 *.iml
 *.iws
