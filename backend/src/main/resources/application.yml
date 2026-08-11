@@ -26,7 +26,10 @@ spring:
       mail.smtp.timeout: 5000
       mail.smtp.writetimeout: 5000
   jackson:
-    default-property-inclusion: non_null
+    # Nullable fields stay in the payload as explicit nulls. Dropping them would force
+    # every client to tell "absent" from "null" when rendering, for example a loan that
+    # has no return date yet.
+    default-property-inclusion: always
 
 server:
   port: 8080
@@ -75,6 +78,8 @@ libris:
   loans:
     loan-days: ${LIBRIS_LOAN_DAYS:14}
     max-active: ${LIBRIS_MAX_ACTIVE_LOANS:3}
+    # Window used by the interface to badge a loan as "por vencer".
+    due-soon-days: ${LIBRIS_DUE_SOON_DAYS:3}
     reminder-days-before: ${LIBRIS_REMINDER_DAYS_BEFORE:2}
     overdue-limit: ${LIBRIS_OVERDUE_LIMIT:3}
     overdue-window-days: ${LIBRIS_OVERDUE_WINDOW_DAYS:90}
