@@ -21,8 +21,16 @@ public record ExternalBookData(
         subjects = subjects == null ? List.of() : List.copyOf(subjects);
     }
 
+    /**
+     * True when the source told us nothing about this book.
+     *
+     * <p>The cover deliberately does not count: it is derived from the ISBN by convention
+     * rather than reported by the source, so a record carrying only a cover URL is still
+     * an empty answer — and treating it as a hit would stop the next source from being
+     * asked at all.
+     */
     public boolean isEmpty() {
-        return isBlank(title) && isBlank(author) && publicationYear == null && isBlank(coverUrl) && subjects.isEmpty();
+        return isBlank(title) && isBlank(author) && publicationYear == null && subjects.isEmpty();
     }
 
     private static boolean isBlank(String value) {
