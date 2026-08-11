@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es"
+      th:replace="~{email/_layout :: page(
+          subject='El libro que esperabas ya está disponible',
+          preheader=${bookTitle} + ' te está esperando en la biblioteca',
+          body=~{::content})}">
+<body>
+<div th:fragment="content" th:remove="tag">
+
+    <h1 style="margin:0 0 16px 0; font-size:22px; font-weight:700; color:#1f2540;">
+        Ya está disponible para ti
+    </h1>
+
+    <p style="margin:0; font-size:15px; line-height:1.7; color:#454b6b;">
+        Hola <strong th:text="${requesterName}">Lector</strong>, el libro que estabas esperando volvió a la
+        biblioteca y eras la primera persona de la lista.
+    </p>
+
+    <div th:replace="~{email/_components :: bookCard}"></div>
+
+    <div th:replace="~{email/_components :: callout('#eef2ff', '#dfe3fb',
+        'Lo estamos reservando <strong>a tu nombre</strong>: nadie más puede llevárselo mientras la
+         reserva siga activa.')}"></div>
+
+    <div th:replace="~{email/_components :: button('Pedirlo prestado', ${appUrl} + '/mis-reservas')}"></div>
+
+</div>
+</body>
+</html>

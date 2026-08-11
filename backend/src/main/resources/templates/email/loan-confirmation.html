@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es"
+      th:replace="~{email/_layout :: page(
+          subject='Préstamo confirmado',
+          preheader='Tienes hasta el ' + ${dueDate} + ' para devolver ' + ${bookTitle},
+          body=~{::content})}">
+<body>
+<div th:fragment="content" th:remove="tag">
+
+    <h1 style="margin:0 0 16px 0; font-size:22px; font-weight:700; color:#1f2540;">
+        Préstamo confirmado
+    </h1>
+
+    <p style="margin:0; font-size:15px; line-height:1.7; color:#454b6b;">
+        Hola <strong th:text="${borrowerName}">Lector</strong>, registramos tu préstamo. Aquí están los detalles:
+    </p>
+
+    <div th:replace="~{email/_components :: bookCard}"></div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+           style="font-size:14px; color:#454b6b;">
+        <tr>
+            <td style="padding:6px 0; color:#6b7394;">Fecha del préstamo</td>
+            <td style="padding:6px 0; text-align:right; font-weight:600;" th:text="${loanDate}">1 de enero</td>
+        </tr>
+        <tr>
+            <td style="padding:6px 0; color:#6b7394;">Fecha límite de devolución</td>
+            <td style="padding:6px 0; text-align:right; font-weight:700; color:#4f46e5;"
+                th:text="${dueDate}">15 de enero</td>
+        </tr>
+    </table>
+
+    <div th:replace="~{email/_components :: callout('#eef2ff', '#dfe3fb',
+        'Te enviaremos un recordatorio unos días antes del vencimiento.')}"></div>
+
+    <div th:replace="~{email/_components :: button('Ver mis préstamos', ${appUrl} + '/mis-prestamos')}"></div>
+
+</div>
+</body>
+</html>

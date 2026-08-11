@@ -33,4 +33,15 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     long countLateReturnsSince(@Param("email") String email, @Param("since") LocalDate since);
 
     List<Loan> findByBorrowerEmailIgnoreCaseAndReturnDateIsNull(String borrowerEmail);
+
+    /**
+     * Loans about to fall due that have not been reminded yet. The null check on
+     * {@code reminderSentAt} is what makes the daily job idempotent: running it twice in
+     * the same day cannot send the same reminder twice.
+     */
+    List<Loan> findByReturnDateIsNullAndReminderSentAtIsNullAndDueDateBetween(
+            LocalDate from, LocalDate to);
+
+    /** Overdue loans that have not been chased yet, for the same reason. */
+    List<Loan> findByReturnDateIsNullAndOverdueNoticeSentAtIsNullAndDueDateBefore(LocalDate date);
 }

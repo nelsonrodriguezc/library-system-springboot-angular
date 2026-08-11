@@ -75,6 +75,9 @@ libris:
   mail:
     from: ${MAIL_FROM:biblioteca@libris.local}
     app-base-url: ${APP_BASE_URL:http://localhost:4200}
+    # Daily sweeps. Both jobs are idempotent, so re-running them is harmless.
+    due-soon-cron: ${LIBRIS_DUE_SOON_CRON:0 0 8 * * *}
+    overdue-cron: ${LIBRIS_OVERDUE_CRON:0 30 8 * * *}
   loans:
     loan-days: ${LIBRIS_LOAN_DAYS:14}
     max-active: ${LIBRIS_MAX_ACTIVE_LOANS:3}

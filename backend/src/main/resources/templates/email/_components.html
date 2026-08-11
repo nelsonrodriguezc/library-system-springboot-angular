@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<!-- Small building blocks reused across the messages. -->
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<body>
+
+<!-- Cover, title and author of the book the message is about. -->
+<table th:fragment="bookCard" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background-color:#fafbff; border:1px solid #e8eaf2; border-radius:12px; margin:20px 0;">
+    <tr>
+        <td width="72" style="padding:16px 0 16px 16px; vertical-align:top;">
+            <img th:if="${coverUrl}" th:src="${coverUrl}" th:alt="${bookTitle}" width="56"
+                 style="width:56px; border-radius:6px; display:block; border:1px solid #e2e5f0;">
+        </td>
+        <td style="padding:16px; vertical-align:top;">
+            <div th:text="${bookTitle}"
+                 style="font-size:16px; font-weight:600; color:#1f2540; line-height:1.4;">Título</div>
+            <div th:text="${bookAuthor}" style="font-size:13px; color:#6b7394; margin-top:4px;">Autor</div>
+        </td>
+    </tr>
+</table>
+
+<!-- Primary call to action. -->
+<table th:fragment="button(label, url)" role="presentation" cellpadding="0" cellspacing="0" border="0"
+       style="margin:24px 0 8px 0;">
+    <tr>
+        <td style="background-color:#4f46e5; border-radius:8px;">
+            <a th:href="${url}" th:text="${label}"
+               style="display:inline-block; padding:12px 24px; font-size:14px; font-weight:600;
+                      color:#ffffff; text-decoration:none;">Ver</a>
+        </td>
+    </tr>
+</table>
+
+<!-- Coloured callout used to highlight dates and warnings. -->
+<table th:fragment="callout(background, border, text)" role="presentation" width="100%"
+       cellpadding="0" cellspacing="0" border="0"
+       th:style="'background-color:' + ${background} + '; border:1px solid ' + ${border}
+                 + '; border-radius:10px; margin:16px 0;'">
+    <tr>
+        <td style="padding:14px 16px; font-size:14px; line-height:1.6;" th:utext="${text}">Mensaje</td>
+    </tr>
+</table>
+
+</body>
+</html>
