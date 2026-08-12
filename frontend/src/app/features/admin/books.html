@@ -1,0 +1,103 @@
+<div class="page">
+  <header class="page__header">
+    <div>
+      <h1 class="page__title">Libros</h1>
+      <p class="page__subtitle">Administra el catálogo de la biblioteca.</p>
+    </div>
+
+    <a class="btn btn--primary" routerLink="/catalogo/nuevo">
+      <app-icon name="plus" [size]="16" />
+      Agregar libro
+    </a>
+  </header>
+
+  <section class="card">
+    <div class="card__toolbar">
+      <form class="card__search" (ngSubmit)="submitSearch()">
+        <label class="sr-only" for="admin-book-search">Buscar libro</label>
+        <span class="field__icon"><app-icon name="search" [size]="16" /></span>
+        <input
+          id="admin-book-search"
+          class="input input--with-icon"
+          type="search"
+          placeholder="Buscar por título, autor o ISBN…"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+          name="search"
+        />
+      </form>
+    </div>
+
+    @if (loading()) {
+      <div class="loading" aria-busy="true">
+        @for (row of [1, 2, 3, 4, 5]; track row) {
+          <div class="loading__row">
+            <app-skeleton style="width: 34px; height: 46px" />
+            <app-skeleton style="flex: 1" />
+            <app-skeleton style="width: 80px" />
+          </div>
+        }
+      </div>
+    } @else if (failed()) {
+      <app-error-state title="No pudimos cargar el catálogo" (retry)="load()" />
+    } @else if (!result()?.content?.length) {
+      <app-empty-state icon="library" title="No encontramos libros" detail="Prueba con otro término de búsqueda." />
+    } @else {
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Libro</th>
+              <th scope="col">ISBN</th>
+              <th scope="col">Año</th>
+              <th scope="col">Estado</th>
+              <th scope="col" class="table__right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (book of result()!.content; track book.id) {
+              <tr>
+                <td>
+                  <div class="book-cell">
+                    <app-book-cover class="book-cell__cover" [url]="book.coverUrl" [title]="book.title" />
+                    <div class="book-cell__text">
+                      <strong>{{ book.title }}</strong>
+                      <span>{{ book.author }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td class="numeric">{{ book.isbn }}</td>
+                <td class="numeric">{{ book.publicationYear ?? '—' }}</td>
+                <td><app-status-badge [status]="book.status" /></td>
+                <td>
+                  <div class="table__actions">
+                    @if (book.status === 'DISPONIBLE') {
+                      <button
+                        type="button"
+                        class="btn btn--danger btn--sm"
+                        [disabled]="deletingId() === book.id"
+                        (click)="remove(book)"
+                      >
+                        <app-icon name="trash" [size]="15" />
+                        Eliminar
+                      </button>
+                    } @else {
+                      <span class="muted" title="Solo se pueden eliminar ejemplares disponibles">—</span>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <footer class="card__footer">
+        <span class="muted">
+          {{ result()!.totalElements }} {{ result()!.totalElements === 1 ? 'libro' : 'libros' }}
+        </span>
+        <app-pagination [page]="result()!.page" [totalPages]="result()!.totalPages" (goTo)="goToPage($event)" />
+      </footer>
+    }
+  </section>
+</div>

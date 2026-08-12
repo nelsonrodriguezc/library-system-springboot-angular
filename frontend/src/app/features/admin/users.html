@@ -1,0 +1,127 @@
+<div class="page">
+  <header class="page__header">
+    <div>
+      <h1 class="page__title">Usuarios</h1>
+      <p class="page__subtitle">Gestiona las cuentas y los bloqueos por atrasos.</p>
+    </div>
+  </header>
+
+  <section class="card">
+    <div class="card__toolbar">
+      <nav class="tabs" aria-label="Filtrar cuentas">
+        <button type="button" class="tab" [class.is-active]="tab() === 'todos'" (click)="selectTab('todos')">
+          Todos
+        </button>
+        <button type="button" class="tab" [class.is-active]="tab() === 'activos'" (click)="selectTab('activos')">
+          Activos
+        </button>
+        <button type="button" class="tab" [class.is-active]="tab() === 'bloqueados'" (click)="selectTab('bloqueados')">
+          Bloqueados
+        </button>
+      </nav>
+
+      <form class="card__search" (ngSubmit)="submitSearch()">
+        <label class="sr-only" for="user-search">Buscar usuario</label>
+        <span class="field__icon"><app-icon name="search" [size]="16" /></span>
+        <input
+          id="user-search"
+          class="input input--with-icon"
+          type="search"
+          placeholder="Buscar por nombre o correo…"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+          name="search"
+        />
+      </form>
+    </div>
+
+    @if (loading()) {
+      <div class="loading" aria-busy="true">
+        @for (row of [1, 2, 3, 4]; track row) {
+          <div class="loading__row">
+            <app-skeleton style="width: 36px; height: 36px; border-radius: 50%" />
+            <app-skeleton style="flex: 1" />
+            <app-skeleton style="width: 80px" />
+          </div>
+        }
+      </div>
+    } @else if (failed()) {
+      <app-error-state title="No pudimos cargar las cuentas" (retry)="load()" />
+    } @else if (!result()?.content?.length) {
+      <app-empty-state
+        icon="users"
+        title="No encontramos cuentas"
+        detail="Ninguna cuenta coincide con el filtro aplicado."
+      />
+    } @else {
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Usuario</th>
+              <th scope="col">Rol</th>
+              <th scope="col">Préstamos</th>
+              <th scope="col">Atrasos (90 días)</th>
+              <th scope="col">Estado</th>
+              <th scope="col" class="table__right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of result()!.content; track user.id) {
+              <tr>
+                <td>
+                  <div class="user-cell">
+                    <span class="avatar">{{ initials(user.name) }}</span>
+                    <div class="user-cell__text">
+                      <strong>{{ user.name }}</strong>
+                      <span>{{ user.email }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td class="muted">{{ user.role === 'ADMIN' ? 'Administrador' : 'Bibliotecario' }}</td>
+                <td class="numeric">{{ user.activeLoans }}</td>
+                <td class="numeric">{{ user.lateReturns }}</td>
+                <td>
+                  <div class="status-cell">
+                    <app-status-badge [status]="user.status" />
+                    @if (user.blockedUntil) {
+                      <small>hasta el {{ user.blockedUntil | date: 'dd MMM yyyy' }}</small>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <div class="table__actions">
+                    @if (user.status === 'BLOQUEADO') {
+                      <button
+                        type="button"
+                        class="btn btn--secondary btn--sm"
+                        [disabled]="unblockingId() === user.id"
+                        (click)="unblock(user)"
+                      >
+                        <app-icon name="unlock" [size]="15" />
+                        Levantar bloqueo
+                      </button>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <footer class="card__footer">
+        <span class="muted">
+          {{ result()!.totalElements }} {{ result()!.totalElements === 1 ? 'cuenta' : 'cuentas' }}
+        </span>
+        <app-pagination
+          [page]="result()!.page"
+          [totalPages]="result()!.totalPages"
+          (goTo)="goToPage($event)"
+        />
+      </footer>
+    }
+  </section>
+</div>
