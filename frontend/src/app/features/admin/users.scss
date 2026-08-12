@@ -1,0 +1,109 @@
+.card__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 0 var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+
+.card__toolbar .tabs {
+  border-bottom: none;
+}
+
+.card__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: min(300px, 100%);
+  padding: var(--space-3) 0;
+}
+
+.card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 220px;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--brand-indigo-soft);
+  color: var(--brand-indigo);
+  font-size: var(--text-sm);
+  font-weight: 650;
+  flex-shrink: 0;
+}
+
+.user-cell__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.user-cell__text strong {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-strong);
+  line-height: 1.3;
+}
+
+.user-cell__text span {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.status-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.status-cell small {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.numeric {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.table__right {
+  text-align: right;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+}
+
+.loading__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}

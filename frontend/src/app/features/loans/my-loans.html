@@ -1,0 +1,132 @@
+<div class="page">
+  <header class="page__header">
+    <div>
+      <h1 class="page__title">Mis préstamos</h1>
+      <p class="page__subtitle">Consulta tus préstamos activos y su estado.</p>
+    </div>
+  </header>
+
+  <section class="card">
+    <nav class="tabs card__tabs" aria-label="Filtrar préstamos">
+      <button type="button" class="tab" [class.is-active]="tab() === 'activos'" (click)="tab.set('activos')">
+        Activos <span class="tab__count">({{ active().length }})</span>
+      </button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'vencidos'" (click)="tab.set('vencidos')">
+        Vencidos <span class="tab__count">({{ overdue().length }})</span>
+      </button>
+      <button type="button" class="tab" [class.is-active]="tab() === 'historial'" (click)="tab.set('historial')">
+        Historial <span class="tab__count">({{ history().length }})</span>
+      </button>
+    </nav>
+
+    @if (loading()) {
+      <div class="loading" aria-busy="true">
+        @for (row of [1, 2, 3]; track row) {
+          <div class="loading__row">
+            <app-skeleton style="width: 40px; height: 54px" />
+            <app-skeleton style="flex: 1" />
+            <app-skeleton style="width: 90px" />
+          </div>
+        }
+      </div>
+    } @else if (failed()) {
+      <app-error-state
+        title="No pudimos cargar tus préstamos"
+        detail="Ocurrió un problema al consultar tu historial."
+        (retry)="load()"
+      />
+    } @else if (!visible().length) {
+      <app-empty-state
+        icon="book"
+        [title]="
+          tab() === 'activos'
+            ? 'No tienes préstamos activos'
+            : tab() === 'vencidos'
+              ? 'No tienes préstamos vencidos'
+              : 'Todavía no tienes historial'
+        "
+        [detail]="
+          tab() === 'vencidos'
+            ? 'Cuando un préstamo pase de su fecha límite aparecerá aquí.'
+            : 'Explora el catálogo para pedir tu primer libro.'
+        "
+      >
+        @if (tab() !== 'vencidos') {
+          <a class="btn btn--primary btn--sm" routerLink="/catalogo">Ir al catálogo</a>
+        }
+      </app-empty-state>
+    } @else {
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Libro</th>
+              <th scope="col">Préstamo</th>
+              <th scope="col">Vencimiento</th>
+              <th scope="col">Estado</th>
+              <th scope="col" class="table__right">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (loan of visible(); track loan.id) {
+              <tr>
+                <td>
+                  <div class="book-cell">
+                    <app-book-cover
+                      class="book-cell__cover"
+                      [url]="loan.book.coverUrl"
+                      [title]="loan.book.title"
+                    />
+                    <div class="book-cell__text">
+                      <strong>{{ loan.book.title }}</strong>
+                      <span>{{ loan.book.author }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td class="nowrap">{{ loan.loanDate | date: 'dd MMM yyyy' }}</td>
+                <td>
+                  <div class="due">
+                    <span class="nowrap">{{ loan.dueDate | date: 'dd MMM yyyy' }}</span>
+                    @if (loan.returnDate) {
+                      <small>Devuelto el {{ loan.returnDate | date: 'dd MMM yyyy' }}</small>
+                    } @else {
+                      <small [class.due__late]="isLate(loan)">{{ dueHint(loan) }}</small>
+                    }
+                  </div>
+                </td>
+                <td><app-status-badge [status]="loan.status" /></td>
+                <td>
+                  <div class="table__actions">
+                    @if (!loan.returnDate) {
+                      <button
+                        type="button"
+                        class="btn btn--secondary btn--sm"
+                        [disabled]="returningId() === loan.id"
+                        (click)="returnLoan(loan)"
+                      >
+                        <app-icon name="check" [size]="15" />
+                        Devolver
+                      </button>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <div class="note">
+    <app-icon name="info" [size]="17" class="note__icon" />
+    <span>
+      Recuerda: puedes tener hasta {{ maxActive }} préstamos activos.
+      @if (!loading() && !failed()) {
+        Te {{ remaining() === 1 ? 'queda' : 'quedan' }} <strong>{{ remaining() }}</strong>.
+      }
+    </span>
+  </div>
+</div>

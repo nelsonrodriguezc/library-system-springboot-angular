@@ -1,0 +1,120 @@
+<div class="page">
+  <header class="page__header">
+    <div>
+      <h1 class="page__title">Resumen general</h1>
+      <p class="page__subtitle">Visión global de la biblioteca.</p>
+    </div>
+
+    <div class="page__actions">
+      <button type="button" class="btn btn--secondary btn--sm" [disabled]="sendingJob() !== null" (click)="runReminders()">
+        <app-icon name="mail" [size]="15" />
+        {{ sendingJob() === 'reminders' ? 'Enviando…' : 'Enviar recordatorios' }}
+      </button>
+      <button type="button" class="btn btn--secondary btn--sm" [disabled]="sendingJob() !== null" (click)="runOverdueNotices()">
+        <app-icon name="alert-triangle" [size]="15" />
+        {{ sendingJob() === 'overdue' ? 'Enviando…' : 'Avisar vencidos' }}
+      </button>
+    </div>
+  </header>
+
+  @if (failed()) {
+    <div class="card">
+      <app-error-state title="No pudimos cargar las estadísticas" (retry)="load()" />
+    </div>
+  } @else if (loading()) {
+    <section class="grid stats">
+      @for (placeholder of [1, 2, 3, 4, 5]; track placeholder) {
+        <div class="card stat-skeleton">
+          <app-skeleton style="width: 60%; height: 12px" />
+          <app-skeleton style="width: 40%; height: 30px" />
+        </div>
+      }
+    </section>
+    <div class="card" style="height: 260px"></div>
+  } @else if (stats(); as data) {
+    <section class="grid stats">
+      <app-stat-card label="Total de libros" [value]="data.catalogue.total" icon="library" tone="info" />
+      <app-stat-card label="Disponibles" [value]="data.catalogue.available" icon="check" tone="success" />
+      <app-stat-card label="Prestados" [value]="data.catalogue.borrowed" icon="book" tone="warning" />
+      <app-stat-card
+        label="Vencidos"
+        [value]="data.loansByStatus.overdue"
+        icon="alert-triangle"
+        tone="danger"
+        [hint]="data.loansByStatus.overdue ? 'Requieren seguimiento' : 'Todo al día'"
+      />
+      <app-stat-card
+        label="Usuarios bloqueados"
+        [value]="data.blockedUsers"
+        icon="lock"
+        tone="danger"
+        [hint]="data.blockedUsers ? 'Por atrasos acumulados' : 'Ninguno'"
+      />
+    </section>
+
+    <div class="grid charts">
+      <section class="card">
+        <header class="card__header">
+          <h2 class="card__title">Préstamos por estado</h2>
+        </header>
+        <div class="card__body">
+          @if (data.loansByStatus.active + data.loansByStatus.dueSoon + data.loansByStatus.overdue + data.loansByStatus.returned === 0) {
+            <app-empty-state icon="chart" title="Todavía no hay préstamos" detail="El gráfico aparecerá con el primer préstamo registrado." />
+          } @else {
+            <app-donut-chart [segments]="loanSegments()" centerLabel="préstamos" />
+          }
+        </div>
+      </section>
+
+      <section class="card">
+        <header class="card__header">
+          <h2 class="card__title">Préstamos por mes</h2>
+          <span class="card__hint">Últimos 6 meses</span>
+        </header>
+        <div class="card__body">
+          <app-line-chart [points]="monthlyPoints()" />
+        </div>
+      </section>
+    </div>
+
+    <section class="card">
+      <header class="card__header">
+        <h2 class="card__title">Usuarios con más atrasos</h2>
+        <a class="card__link" routerLink="/admin/usuarios">
+          Gestionar usuarios <app-icon name="arrow-right" [size]="15" />
+        </a>
+      </header>
+
+      @if (!data.topOverdueUsers.length) {
+        <app-empty-state
+          icon="check"
+          title="Nadie acumula atrasos"
+          detail="Ninguna cuenta ha devuelto libros fuera de plazo en los últimos 90 días."
+        />
+      } @else {
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Usuario</th>
+                <th scope="col">Correo</th>
+                <th scope="col">Atrasos (90 días)</th>
+                <th scope="col">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (user of data.topOverdueUsers; track user.id) {
+                <tr>
+                  <td class="strong">{{ user.name }}</td>
+                  <td class="muted">{{ user.email }}</td>
+                  <td class="numeric">{{ user.lateReturns }}</td>
+                  <td><app-status-badge [status]="user.status" /></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</div>

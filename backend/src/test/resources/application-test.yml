@@ -1,0 +1,29 @@
+# Settings for the integration tests. The database URL is injected by Testcontainers.
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    # Base migrations only: the demo activity would make the assertions depend on data
+    # that exists purely to make the dashboards look alive.
+    locations: classpath:db/migration
+  mail:
+    host: localhost
+    port: 3025
+
+libris:
+  security:
+    jwt:
+      # Fixed test key so tokens are reproducible across runs. Not a real secret.
+      secret: integration-test-signing-key-please-do-not-reuse
+      expiration-minutes: 60
+  open-library:
+    # Nothing in the integration tests should reach the real Open Library. Pointing the
+    # client at an unroutable port also proves the catalogue keeps working without it.
+    base-url: http://localhost:1
+    timeout-seconds: 1
+
+logging:
+  level:
+    org.testcontainers: WARN
+    com.github.dockerjava: WARN

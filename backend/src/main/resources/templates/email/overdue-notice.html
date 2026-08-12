@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es"
+      th:replace="~{email/_layout :: page(
+          subject='Préstamo vencido',
+          preheader=${bookTitle} + ' venció el ' + ${dueDate},
+          body=~{::content})}">
+<body>
+<div th:fragment="content" th:remove="tag">
+
+    <h1 style="margin:0 0 16px 0; font-size:22px; font-weight:700; color:#1f2540;">
+        Tienes un préstamo vencido
+    </h1>
+
+    <p style="margin:0; font-size:15px; line-height:1.7; color:#454b6b;">
+        Hola <strong th:text="${borrowerName}">Lector</strong>, este libro debió volver a la biblioteca.
+    </p>
+
+    <div th:replace="~{email/_components :: bookCard}"></div>
+
+    <div th:replace="~{email/_components :: callout('#fef2f2', '#fbd5d5',
+        'Venció el <strong>' + ${dueDate} + '</strong>, hace ' + ${daysLate} + ' días.')}"></div>
+
+    <p style="margin:16px 0 0 0; font-size:14px; line-height:1.7; color:#6b7394;">
+        Al devolverlo se registrará un atraso en tu cuenta. Acumular varios atrasos en poco
+        tiempo bloquea temporalmente la posibilidad de pedir nuevos préstamos.
+    </p>
+
+    <div th:replace="~{email/_components :: button('Ver mis préstamos', ${appUrl} + '/mis-prestamos')}"></div>
+
+</div>
+</body>
+</html>

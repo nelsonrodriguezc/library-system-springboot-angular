@@ -1,0 +1,70 @@
+.card__tabs {
+  padding: 0 var(--space-6);
+}
+
+.book-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 220px;
+}
+
+.book-cell__cover {
+  width: 38px;
+  height: 52px;
+  flex-shrink: 0;
+}
+
+.book-cell__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.book-cell__text strong {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-strong);
+  line-height: 1.3;
+}
+
+.book-cell__text span {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.position {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.position--ready {
+  color: var(--brand-indigo);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--text-faint);
+}
+
+.table__right {
+  text-align: right;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+}
+
+.loading__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}

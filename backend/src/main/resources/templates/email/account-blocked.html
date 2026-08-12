@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es"
+      th:replace="~{email/_layout :: page(
+          subject='Cuenta bloqueada temporalmente',
+          preheader='Podrás volver a pedir préstamos el ' + ${blockedUntil},
+          body=~{::content})}">
+<body>
+<div th:fragment="content" th:remove="tag">
+
+    <h1 style="margin:0 0 16px 0; font-size:22px; font-weight:700; color:#1f2540;">
+        Tu cuenta quedó bloqueada temporalmente
+    </h1>
+
+    <p style="margin:0; font-size:15px; line-height:1.7; color:#454b6b;">
+        Hola <strong th:text="${userName}">Lector</strong>, acumulaste
+        <strong th:text="${overdueLimit}">3</strong> devoluciones fuera de plazo en los últimos
+        <strong th:text="${windowDays}">90</strong> días, así que por ahora no podrás pedir nuevos préstamos.
+    </p>
+
+    <div th:replace="~{email/_components :: callout('#fef2f2', '#fbd5d5',
+        'El bloqueo se levanta automáticamente el <strong>' + ${blockedUntil} + '</strong>.')}"></div>
+
+    <p style="margin:16px 0 0 0; font-size:14px; line-height:1.7; color:#6b7394;">
+        Mientras tanto puedes seguir consultando el catálogo y devolver los libros que tengas en tu poder.
+        Si crees que se trata de un error, escríbele al equipo de la biblioteca: un administrador puede
+        levantar el bloqueo antes de esa fecha.
+    </p>
+
+    <div th:replace="~{email/_components :: button('Ir a Libris', ${appUrl})}"></div>
+
+</div>
+</body>
+</html>
