@@ -1,0 +1,94 @@
+# Full stack for local evaluation: database, fake SMTP, API and interface.
+#
+#   docker compose up --build
+#
+# Interface   http://localhost:4200
+# API + docs  http://localhost:8080/swagger-ui.html
+# Mailbox     http://localhost:8025
+#
+# Values come from .env (copy .env.example). Nothing here contains a real secret:
+# leaving JWT_SECRET empty makes the API generate an ephemeral key at startup.
+
+name: libris
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: libris-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-libris}
+      POSTGRES_USER: ${POSTGRES_USER:-libris}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-libris}
+      TZ: ${TZ:-America/Santiago}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      # Exposed so the database can be inspected from the host; the application
+      # reaches it over the compose network, not through this port.
+      - '${POSTGRES_PORT:-5432}:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-libris} -d ${POSTGRES_DB:-libris}']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: libris-mailhog
+    ports:
+      - '1025:1025' # SMTP
+      - '8025:8025' # web interface
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    container_name: libris-backend
+    depends_on:
+      postgres:
+        # Waits for the database to accept connections, otherwise Flyway would
+        # race it on a cold start.
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-libris}
+      DB_USERNAME: ${POSTGRES_USER:-libris}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-libris}
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+      MAIL_FROM: ${MAIL_FROM:-biblioteca@libris.local}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:4200}
+      # Empty on purpose when unset: the API generates a key and logs a warning.
+      JWT_SECRET: ${JWT_SECRET:-}
+      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-480}
+      # "demo" loads the sample activity that makes the dashboards meaningful.
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-demo}
+      # Business rules stay configurable without rebuilding the image.
+      LIBRIS_LOAN_DAYS: ${LIBRIS_LOAN_DAYS:-14}
+      LIBRIS_MAX_ACTIVE_LOANS: ${LIBRIS_MAX_ACTIVE_LOANS:-3}
+      LIBRIS_DUE_SOON_DAYS: ${LIBRIS_DUE_SOON_DAYS:-3}
+      LIBRIS_REMINDER_DAYS_BEFORE: ${LIBRIS_REMINDER_DAYS_BEFORE:-2}
+      LIBRIS_OVERDUE_LIMIT: ${LIBRIS_OVERDUE_LIMIT:-3}
+      LIBRIS_OVERDUE_WINDOW_DAYS: ${LIBRIS_OVERDUE_WINDOW_DAYS:-90}
+      LIBRIS_BLOCK_DAYS: ${LIBRIS_BLOCK_DAYS:-7}
+      # Due dates are business dates, so the container has to agree with the library.
+      TZ: ${TZ:-America/Santiago}
+    ports:
+      - '${BACKEND_PORT:-8080}:8080'
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: libris-frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - '${FRONTEND_PORT:-4200}:80'
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
