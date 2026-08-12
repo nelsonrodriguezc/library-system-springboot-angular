@@ -6,55 +6,75 @@ export interface LinePoint {
 }
 
 /**
- * Small trend line, again as plain SVG.
+ * Small trend line, drawn as plain SVG.
  *
- * Uses a fixed viewBox with `preserveAspectRatio="none"` so the plot stretches to the
- * card while the labels, drawn outside the SVG in HTML, keep their real font size.
+ * <p>Two details keep it inside its card. The plot is a grid row with an explicit
+ * {@code minmax(0, 1fr)} and the SVG is absolutely positioned inside it: a percentage
+ * height on an SVG whose parent has no definite height resolves to the viewBox aspect
+ * ratio instead, which for a square viewBox means a plot as tall as the card is wide.
+ *
+ * <p>The markers are HTML rather than {@code <circle>} elements. The path is stretched
+ * with {@code preserveAspectRatio="none"}, which is fine for a line but would squash a
+ * circle into an ellipse; positioning the dots in percentages keeps them round whatever
+ * the card's proportions are.
  */
 @Component({
   selector: 'app-line-chart',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="chart">
+      <!--
+        Each label is pinned to its own grid line rather than spread with space-between,
+        which aligns edges and would leave the outermost numbers about half a line off.
+      -->
       <div class="chart__scale" aria-hidden="true">
-        @for (tick of ticks(); track tick) {
-          <span>{{ tick }}</span>
+        @for (tick of ticks(); track $index; let i = $index) {
+          <span [style.top.%]="gridY(i)">{{ tick }}</span>
         }
       </div>
 
       <div class="chart__plot">
         <svg
+          class="chart__canvas"
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
           role="img"
           [attr.aria-label]="ariaLabel()"
         >
-          @for (tick of ticks(); track tick; let i = $index) {
+          @for (tick of ticks(); track $index; let i = $index) {
             <line
               class="chart__grid"
               x1="0"
               x2="100"
-              [attr.y1]="(i / (ticks().length - 1)) * 100"
-              [attr.y2]="(i / (ticks().length - 1)) * 100"
+              [attr.y1]="gridY(i)"
+              [attr.y2]="gridY(i)"
               vector-effect="non-scaling-stroke"
             />
           }
 
           <polygon class="chart__area" [attr.points]="areaPoints()" />
-          <polyline class="chart__line" [attr.points]="linePoints()" vector-effect="non-scaling-stroke" />
-
-          @for (point of plotted(); track point.label) {
-            <circle
-              class="chart__dot"
-              [attr.cx]="point.x"
-              [attr.cy]="point.y"
-              r="3"
-              vector-effect="non-scaling-stroke"
-            >
-              <title>{{ point.label }}: {{ point.total }}</title>
-            </circle>
-          }
+          <polyline
+            class="chart__line"
+            [attr.points]="linePoints()"
+            vector-effect="non-scaling-stroke"
+          />
         </svg>
+
+        <!--
+          Markers live outside the stretched coordinate system so they stay circular.
+          The layer is inset to exactly the canvas box, which is what makes a percentage
+          position land on the same spot as the polyline it belongs to.
+        -->
+        <div class="chart__markers">
+          @for (point of plotted(); track point.label) {
+            <span
+              class="chart__dot"
+              [style.left.%]="point.x"
+              [style.top.%]="point.y"
+              [title]="point.label + ': ' + point.total"
+            ></span>
+          }
+        </div>
       </div>
 
       <div class="chart__labels" aria-hidden="true">
@@ -67,32 +87,44 @@ export interface LinePoint {
   styles: `
     .chart {
       display: grid;
-      grid-template-columns: 34px 1fr;
-      grid-template-rows: 1fr auto;
+      grid-template-columns: 34px minmax(0, 1fr);
+      /* minmax(0, 1fr) lets the plot row shrink instead of being pushed by its content. */
+      grid-template-rows: minmax(0, 1fr) auto;
       gap: var(--space-2);
       height: 200px;
     }
 
     .chart__scale {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: flex-end;
+      position: relative;
+      /* Matches the plot's padding so the percentages share one coordinate space. */
+      margin: 7px 0;
       font-size: var(--text-xs);
       color: var(--text-faint);
       font-variant-numeric: tabular-nums;
-      padding-bottom: 2px;
+    }
+
+    .chart__scale span {
+      position: absolute;
+      right: 0;
+      transform: translateY(-50%);
+      line-height: 1;
+      white-space: nowrap;
     }
 
     .chart__plot {
       position: relative;
       min-width: 0;
+      min-height: 0;
+      /* Room for the markers sitting on the top and bottom grid lines. */
+      padding: 7px 0;
     }
 
-    svg {
+    .chart__canvas {
+      position: absolute;
+      inset: 7px 0;
       width: 100%;
-      height: 100%;
-      overflow: visible;
+      height: calc(100% - 14px);
+      display: block;
     }
 
     .chart__grid {
@@ -113,10 +145,19 @@ export interface LinePoint {
       stroke-linecap: round;
     }
 
+    .chart__markers {
+      position: absolute;
+      inset: 7px 0;
+    }
+
     .chart__dot {
-      fill: var(--surface-card);
-      stroke: var(--chart-line);
-      stroke-width: 2;
+      position: absolute;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--surface-card);
+      border: 2px solid var(--chart-line);
+      transform: translate(-50%, -50%);
     }
 
     .chart__labels {
@@ -158,6 +199,11 @@ export class LineChart {
     }));
   });
 
+  protected gridY(index: number): number {
+    const lines = this.ticks().length - 1;
+    return lines === 0 ? 0 : (index / lines) * 100;
+  }
+
   protected readonly linePoints = computed(() =>
     this.plotted()
       .map((point) => `${point.x},${point.y}`)
@@ -166,8 +212,7 @@ export class LineChart {
 
   /** Closes the line down to the baseline so the area underneath can be tinted. */
   protected readonly areaPoints = computed(() => {
-    const plotted = this.plotted();
-    if (plotted.length === 0) {
+    if (this.plotted().length === 0) {
       return '';
     }
     return `0,100 ${this.linePoints()} 100,100`;
