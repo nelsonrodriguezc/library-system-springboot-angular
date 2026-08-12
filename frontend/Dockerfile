@@ -19,5 +19,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
+# 127.0.0.1 rather than localhost: busybox wget resolves localhost to ::1 and does not
+# fall back to IPv4, so the probe has to name the address it means.
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=5 \
-    CMD wget -qO- http://localhost/ >/dev/null 2>&1 || exit 1
+    CMD wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1
