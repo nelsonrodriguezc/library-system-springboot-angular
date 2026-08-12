@@ -61,6 +61,21 @@ export const routes: Routes = [
         canActivate: [adminGuard],
         children: [
           { path: '', pathMatch: 'full', redirectTo: 'resumen' },
+          {
+            path: 'resumen',
+            title: 'Resumen · Libris',
+            loadComponent: () => import('./features/admin/overview').then((m) => m.AdminOverview),
+          },
+          {
+            path: 'usuarios',
+            title: 'Usuarios · Libris',
+            loadComponent: () => import('./features/admin/users').then((m) => m.AdminUsers),
+          },
+          {
+            path: 'libros',
+            title: 'Libros · Libris',
+            loadComponent: () => import('./features/admin/books').then((m) => m.AdminBooks),
+          },
         ],
       },
     ],
