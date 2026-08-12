@@ -78,8 +78,11 @@ curl -X POST http://localhost:8080/api/admin/notifications/due-soon-reminders \
 ```
 backend/    API REST en Spring Boot (Java 21)
 frontend/   Aplicación Angular 21 (standalone + signals)
-docs/       Colección Postman
+docs/       Modelo de datos y colección Postman
 ```
+
+📐 **Diagrama entidad-relación, restricciones y consultas de ejemplo:**
+[`docs/modelo-de-datos.md`](docs/modelo-de-datos.md)
 
 ### Backend: paquetes por funcionalidad
 
