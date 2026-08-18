@@ -1,3 +1,5 @@
+**🌐 Idioma:** [English](data-model.md) · **Español**
+
 # Modelo de datos
 
 Esquema real generado por las migraciones de Flyway
@@ -32,7 +34,7 @@ erDiagram
     }
 
     BOOK_SUBJECT {
-        bigint       book_id PK-FK
+        bigint       book_id PK,FK
         varchar_120  subject PK
     }
 
