@@ -1,3 +1,5 @@
+**🌐 Idioma:** [English](README.md) · **Español**
+
 # Libris — Sistema de préstamos para una biblioteca
 
 Reemplaza la planilla Excel de préstamos por una aplicación real: catálogo con búsqueda,
@@ -82,7 +84,7 @@ docs/       Modelo de datos y colección Postman
 ```
 
 📐 **Diagrama entidad-relación, restricciones y consultas de ejemplo:**
-[`docs/modelo-de-datos.md`](docs/modelo-de-datos.md)
+[`docs/data-model.es.md`](docs/data-model.es.md)
 
 ### Backend: paquetes por funcionalidad
 
@@ -312,7 +314,7 @@ inventadas: simplemente no se muestra el panel.
 cd backend && ./mvnw verify
 ```
 
-**110 pruebas** (85 unitarias + 25 de integración).
+**126 pruebas** (101 unitarias + 25 de integración).
 
 | Qué se cubre | Con qué |
 |---|---|
