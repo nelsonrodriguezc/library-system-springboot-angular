@@ -81,7 +81,7 @@ el enunciado y se resolvió el vínculo **por correo**:
   cambia su nombre, el registro histórico sigue diciendo a quién se le entregó el libro.
 - El bloqueo y `/mine` se resuelven buscando `app_user` por `lower(email)`.
 
-Está documentado en el README como decisión propia.
+Está documentado en el [README](../README.es.md) como decisión propia.
 
 ## Reglas de negocio que vive la base de datos
 
