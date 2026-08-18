@@ -1,8 +1,16 @@
-# Libris — Sistema de préstamos para una biblioteca
+**🌐 Language:** **English** · [Español](README.es.md)
 
-Reemplaza la planilla Excel de préstamos por una aplicación real: catálogo con búsqueda,
-préstamos con reglas de negocio (atrasos, bloqueos, lista de espera), avisos por correo
-antes de que venza un préstamo y autocompletado de fichas desde Open Library con solo el ISBN.
+# Libris — Library Loan Management System
+
+Replaces a library's loan spreadsheet with a real application: a searchable catalogue,
+loans with actual business rules (overdue tracking, account blocks, a waiting list),
+e-mail reminders before a loan falls due, and record autofill from Open Library given
+just an ISBN.
+
+> **A note on language:** the interface, validation messages and API error codes are in
+> **Spanish** — a deliberate choice, since the assessment this project was built for
+> targets a Spanish-speaking library. This documentation is in English by default for
+> portfolio visibility, with a [full Spanish version](README.es.md) available.
 
 <p align="center">
   <img alt="Java 21" src="https://img.shields.io/badge/Java-21-orange">
@@ -13,44 +21,44 @@ antes de que venza un préstamo y autocompletado de fichas desde Open Library co
 
 ---
 
-## 1. Arrancar todo
+## 1. Run everything
 
-Necesitas solo **Docker**. No hace falta JDK, Maven ni Node instalados.
+You only need **Docker**. No local JDK, Maven or Node required.
 
 ```bash
 docker compose up --build
 ```
 
-| Qué | Dónde |
+| What | Where |
 |---|---|
-| Aplicación | http://localhost:4200 |
+| Application | http://localhost:4200 |
 | API + Swagger UI | http://localhost:8080/swagger-ui.html |
-| Buzón de correo (MailHog) | http://localhost:8025 |
-| Salud del backend | http://localhost:8080/actuator/health |
+| Mailbox (MailHog) | http://localhost:8025 |
+| Backend health | http://localhost:8080/actuator/health |
 
-La primera vez tarda unos minutos (compila el backend y el frontend dentro de las imágenes).
-Para detener todo y borrar los datos: `docker compose down -v`.
+The first run takes a few minutes (it compiles both the backend and the frontend inside
+the images). To stop everything and drop the data: `docker compose down -v`.
 
-### Cuentas de prueba
+### Test accounts
 
-Se crean con las migraciones. Son credenciales desechables para una base de datos
-desechable; **no hay ningún secreto real en el repositorio**.
+Created by the migrations. These are throwaway credentials for a throwaway database;
+**there is no real secret anywhere in this repository**.
 
-| Correo | Contraseña | Rol |
+| E-mail | Password | Role |
 |---|---|---|
 | `admin@libris.cl` | `Admin123!` | ADMIN |
-| `bibliotecario@libris.cl` | `Biblio123!` | BIBLIOTECARIO |
-| `lector@libris.cl` | `Demo123!` | BIBLIOTECARIO |
+| `bibliotecario@libris.cl` | `Biblio123!` | BIBLIOTECARIO (librarian) |
+| `lector@libris.cl` | `Demo123!` | BIBLIOTECARIO (librarian) |
 
-Con el perfil `demo` (activo por defecto) se cargan además préstamos, devoluciones tardías,
-reservas y una cuenta bloqueada, para que los paneles no salgan vacíos.
+The `demo` profile (on by default) also loads loans, late returns, reservations and one
+blocked account, so the dashboards are not empty on first login.
 
-### Ver los correos
+### Reading the e-mails
 
-Todo lo que la aplicación envía queda en **MailHog**: http://localhost:8025
+Everything the application sends lands in **MailHog**: http://localhost:8025
 
-Para no esperar al cron de las 08:00, un ADMIN puede disparar las tareas a mano desde
-**Administración → Resumen**, o por API:
+To avoid waiting for the 08:00 cron, an ADMIN can trigger the scheduled jobs by hand from
+**Administración → Resumen**, or through the API:
 
 ```bash
 curl -X POST http://localhost:8080/api/admin/notifications/due-soon-reminders \
@@ -59,122 +67,125 @@ curl -X POST http://localhost:8080/api/admin/notifications/due-soon-reminders \
 
 ---
 
-## 2. Recorrido de 5 minutos
+## 2. Five-minute walkthrough
 
-1. Entra como **admin@libris.cl / Admin123!**
+1. Sign in as **admin@libris.cl / Admin123!**
 2. **Catálogo → Agregar libro** → ISBN `9780321356680` → *Buscar información*.
-   Se completa solo: *Effective Java*, Joshua Bloch, 2008, con portada y temas.
-3. Confirma. El libro queda disponible.
-4. Pídelo prestado → llega el **correo de confirmación** a MailHog.
-5. Abre otra sesión con `lector@libris.cl` y **reserva** ese mismo libro (ya está prestado).
-6. Devuélvelo desde la primera sesión → el ejemplar queda **RESERVADO** y al lector le llega
-   el aviso de *libro disponible*.
-7. En **Administración → Resumen**, pulsa *Enviar recordatorios* y revisa MailHog.
+   It fills itself in: *Effective Java*, Joshua Bloch, 2008, with cover and subjects.
+3. Confirm. The book is now available.
+4. Borrow it → the **confirmation e-mail** lands in MailHog.
+5. Open another session as `lector@libris.cl` and **reserve** that same book (it's out now).
+6. Return it from the first session → the copy goes to **RESERVADO** and the reader who
+   was waiting gets the *book available* notice.
+7. In **Administración → Resumen**, click *Enviar recordatorios* and check MailHog.
 
 ---
 
-## 3. Arquitectura
+## 3. Architecture
 
 ```
-backend/    API REST en Spring Boot (Java 21)
-frontend/   Aplicación Angular 21 (standalone + signals)
-docs/       Colección Postman
+backend/    REST API in Spring Boot (Java 21)
+frontend/   Angular 21 application (standalone + signals)
+docs/       Data model and Postman collection
 ```
 
-### Backend: paquetes por funcionalidad
+📐 **Entity-relationship diagram, constraints and sample queries:**
+[`docs/data-model.md`](docs/data-model.md)
+
+### Backend: packages by feature
 
 ```
 com.libris
-├── auth/           Registro, login, JWT
-├── book/           Catálogo, ISBN
-│   ├── metadata/   Puerto hacia catálogos externos + adaptadores de Open Library
-│   └── recommendation/  Recomendador content-based
-├── loan/           Préstamos
-│   ├── policy/     Cálculo de fecha límite y estado derivado
-│   └── rule/       Reglas de elegibilidad, una clase por regla
-├── reservation/    Lista de espera
-├── user/           Cuentas, política de bloqueo, administración
-├── stats/          Estadísticas del panel
-├── notification/   Eventos, plantillas, envío y tareas programadas
-└── shared/         Excepciones de negocio y forma única de error
+├── auth/           Registration, login, JWT
+├── book/           Catalogue, ISBN
+│   ├── metadata/   Port toward external catalogues + Open Library adapters
+│   └── recommendation/  Content-based recommender
+├── loan/           Loans
+│   ├── policy/     Due-date calculation and derived status
+│   └── rule/       Eligibility rules, one class per rule
+├── reservation/    Waiting list
+├── user/           Accounts, block policy, administration
+├── stats/          Dashboard statistics
+├── notification/   Events, templates, delivery and scheduled jobs
+└── shared/         Business exceptions and the single error shape
 ```
 
-### Cómo se aplica SOLID
+### How SOLID is actually applied
 
-No como etiqueta: cada principio resolvió un problema concreto de este sistema.
+Not as a label: each principle solved a concrete problem in this system.
 
-**SRP — una razón para cambiar.**
-`DueDateCalculator` solo calcula `préstamo + 14 días`. `OverdueBlockPolicy` solo decide si
-una devolución tardía cuesta el bloqueo. `LoanStatusResolver` solo traduce un préstamo al
-estado que ve la interfaz. `LoanService` no contiene ninguna regla: orquesta y abre la
-transacción. Los controladores no tienen lógica de negocio.
+**SRP — one reason to change.**
+`DueDateCalculator` only computes `loan date + 14 days`. `OverdueBlockPolicy` only decides
+whether a late return costs the block. `LoanStatusResolver` only translates a loan into
+the status the interface shows. `LoanService` holds no rule at all: it orchestrates and
+opens the transaction. Controllers carry no business logic.
 
-**OCP — abierto a extensión, cerrado a modificación.**
-Las condiciones para prestar son beans que implementan
-[`LoanRule`](backend/src/main/java/com/libris/loan/rule/LoanRule.java); Spring los inyecta
-como lista ordenada. Agregar una regla es agregar una clase: `LoanService` no cambia.
-La prueba está en el historial — la regla de la lista de espera
+**OCP — open for extension, closed for modification.**
+The conditions a loan must pass are beans implementing
+[`LoanRule`](backend/src/main/java/com/libris/loan/rule/LoanRule.java); Spring injects
+them as an ordered list. Adding a rule means adding a class — `LoanService` never
+changes. The proof is in the history: the waiting-list rule
 ([`ReservationHolderRule`](backend/src/main/java/com/libris/reservation/ReservationHolderRule.java))
-la aporta el módulo de reservas y se enchufa sin tocar el de préstamos.
+is contributed by the reservation module and plugs in without touching the loan module.
 
-**LSP — sustituibles de verdad.**
+**LSP — genuinely substitutable.**
 [`BookMetadataSource`](backend/src/main/java/com/libris/book/metadata/BookMetadataSource.java)
-tiene un contrato total: **nunca lanza excepciones**. Caída, timeout, 429 o ISBN desconocido
-producen el mismo `Optional.empty()`. Por eso las dos implementaciones de Open Library son
-intercambiables y el catálogo sigue funcionando cuando el tercero no.
+has a total contract: it **never throws**. An outage, a timeout, a 429 or an unknown ISBN
+all produce the same `Optional.empty()`. That is why the two Open Library implementations
+are interchangeable, and why the catalogue keeps working when the third party does not.
 
-**ISP — interfaces del tamaño de quien las usa.**
-En vez de un `NotificationService` con cinco métodos, hay tres puertos:
+**ISP — interfaces sized to whoever uses them.**
+Instead of one `NotificationService` with five methods, there are three ports:
 [`LoanNotifier`](backend/src/main/java/com/libris/notification/port/LoanNotifier.java),
-`AccountNotifier` y `ReservationNotifier`. Las tareas programadas dependen solo del primero.
+`AccountNotifier` and `ReservationNotifier`. The scheduled jobs depend only on the first.
 
-**DIP — depender de abstracciones.**
-El dominio depende de `EmailSender`, `TemplateRenderer`, `BookMetadataProvider` y de un
-`Clock` inyectado. Ninguna regla importa `JavaMailSender`, `RestClient` ni llama a
-`LocalDate.now()`; por eso los tests fijan el tiempo con `Clock.fixed` y verifican la
-ventana de 90 días sin depender del día en que se ejecuten.
+**DIP — depend on abstractions.**
+The domain depends on `EmailSender`, `TemplateRenderer`, `BookMetadataProvider` and an
+injected `Clock`. No rule imports `JavaMailSender`, `RestClient`, or calls
+`LocalDate.now()` directly; that is what lets the tests pin time with `Clock.fixed` and
+verify the 90-day window without depending on the day they happen to run.
 
 ---
 
-## 4. Reglas de negocio
+## 4. Business rules
 
-| Regla | Dónde vive | Error que devuelve |
+| Rule | Lives in | Error returned |
 |---|---|---|
-| El ejemplar debe estar en estantería | `BookAvailableRule` | `409 BOOK_NOT_AVAILABLE` |
-| Un ejemplar retenido es solo para su titular | `ReservationHolderRule` | `409 BOOK_RESERVED_FOR_ANOTHER_USER` |
-| La cuenta no puede estar bloqueada | `BorrowerNotBlockedRule` | `409 USER_BLOCKED` |
-| Máximo 3 préstamos activos | `MaxActiveLoansRule` | `409 MAX_ACTIVE_LOANS` |
-| ISBN único | `BookService` + índice único | `409 DUPLICATE_ISBN` |
-| Solo se elimina lo disponible | `BookService` | `409 BOOK_NOT_DELETABLE` |
+| The copy must be on the shelf | `BookAvailableRule` | `409 BOOK_NOT_AVAILABLE` |
+| A held copy is only for its holder | `ReservationHolderRule` | `409 BOOK_RESERVED_FOR_ANOTHER_USER` |
+| The account must not be blocked | `BorrowerNotBlockedRule` | `409 USER_BLOCKED` |
+| At most 3 active loans | `MaxActiveLoansRule` | `409 MAX_ACTIVE_LOANS` |
+| ISBN must be unique | `BookService` + unique index | `409 DUPLICATE_ISBN` |
+| Only available copies can be deleted | `BookService` | `409 BOOK_NOT_DELETABLE` |
 
-**Al prestar:** el libro pasa a `PRESTADO`, la fecha límite se fija a 14 días y se publica un
-evento que envía el correo de confirmación fuera del hilo HTTP.
+**On loan:** the book moves to `PRESTADO`, the due date is set 14 days out, and an event
+is published that sends the confirmation e-mail off the HTTP thread.
 
-**Al devolver:** si vuelve tarde, se registra un atraso. Al **tercer atraso en 90 días** la
-cuenta queda bloqueada **una semana** y recibe el aviso; un ADMIN puede levantarlo antes.
-Si alguien esperaba ese título, el ejemplar queda `RESERVADO` para el primero de la fila y se
-le avisa por correo, en vez de volver a `DISPONIBLE`.
+**On return:** a late return is recorded as a strike. On the **third strike in 90 days**
+the account is blocked for **one week** and notified; an ADMIN can lift it early. If
+someone was waiting for that title, the copy goes to `RESERVADO` for the first person in
+the queue and they are notified by e-mail, instead of going back to `DISPONIBLE`.
 
-El bloqueo se guarda como `blocked_until` (marca de tiempo), no como un booleano: **expira
-solo**, sin necesidad de una tarea que lo limpie.
+The block is stored as `blocked_until` (a timestamp), not a boolean: it **lapses on its
+own**, with no cleanup job required.
 
 ---
 
-## 5. Correo
+## 5. E-mail
 
-Cinco plantillas Thymeleaf en
-[`templates/email/`](backend/src/main/resources/templates/email), sobre un layout compartido
-con tablas y estilos en línea (los clientes de correo siguen sin soportar flexbox):
+Five Thymeleaf templates under
+[`templates/email/`](backend/src/main/resources/templates/email), built on a shared
+layout using tables and inline styles (mail clients still don't support flexbox):
 
-| Plantilla | Cuándo |
+| Template | When |
 |---|---|
-| `loan-confirmation` | al registrar el préstamo |
-| `due-soon-reminder` | tarea diaria, 2 días antes del vencimiento |
-| `overdue-notice` | tarea diaria, préstamo ya vencido |
-| `account-blocked` | al llegar al tercer atraso |
-| `book-available` | al liberarse un título que alguien esperaba |
+| `loan-confirmation` | when the loan is registered |
+| `due-soon-reminder` | daily job, 2 days before the due date |
+| `overdue-notice` | daily job, once the loan is overdue |
+| `account-blocked` | on the third strike |
+| `book-available` | when a title someone was waiting for is freed up |
 
-El envío **nunca bloquea la petición HTTP**:
+Delivery **never blocks the HTTP request**:
 
 ```java
 @Async(AsyncConfig.NOTIFICATION_EXECUTOR)
@@ -182,51 +193,54 @@ El envío **nunca bloquea la petición HTTP**:
 public void onLoanCreated(LoanCreatedEvent event) { ... }
 ```
 
-`AFTER_COMMIT` garantiza que ningún correo describa un préstamo que terminó revertido, y
-`@Async` sobre un pool propio evita que un SMTP lento consuma los hilos del servidor web.
+`AFTER_COMMIT` guarantees no e-mail can ever describe a loan that ended up rolled back,
+and `@Async` on its own pool keeps a slow SMTP server from consuming the web server's
+threads.
 
-Las dos tareas son **idempotentes**: marcan `reminder_sent_at` / `overdue_notice_sent_at` al
-enviar, así que ejecutarlas dos veces el mismo día no duplica avisos.
+Both jobs are **idempotent**: they stamp `reminder_sent_at` / `overdue_notice_sent_at` as
+they send, so running them twice on the same day never duplicates a notice.
 
 ---
 
-## 6. Integración con Open Library
+## 6. Open Library integration
 
-`GET /api/books/lookup/{isbn}` previsualiza sin guardar nada, y `POST /api/books` acepta
-**solo el ISBN** y completa el resto.
+`GET /api/books/lookup/{isbn}` previews without saving anything, and `POST /api/books`
+accepts **just the ISBN** and fills in the rest.
 
-**Dos fuentes tras el mismo puerto.** El enunciado ilustra la integración con
-`/isbn/{isbn}.json`. Ese endpoint devuelve la *edición*: trae título, año y portada, pero **no
-el autor ni los temas**, que viven en el *work* y costarían tres o cuatro llamadas encadenadas.
-Por eso la fuente principal es `/api/books?jscmd=data`, que responde todo en una sola llamada,
-y el endpoint del enunciado queda como respaldo. Ambas implementan
-`BookMetadataSource` y se consultan en orden.
+**Two sources behind the same port.** The assessment illustrates the integration with
+`/isbn/{isbn}.json`. That endpoint returns the *edition*: title, year and cover, but
+**not the author or the subjects**, which live on the *work* and would cost three or four
+chained calls. The primary source is therefore `/api/books?jscmd=data`, which answers
+everything in one call, with the endpoint from the assessment kept as the fallback. Both
+implement `BookMetadataSource` and are queried in order.
 
-**Detalles que costó descubrir y están resueltos:**
+**Details that took some digging and are now handled:**
 
-- `/isbn/{isbn}.json` responde **302** hacia la URL canónica → el cliente sigue redirecciones.
-- Open Library **limita el tráfico anónimo** → se envía un `User-Agent` propio.
-- Entre los temas vienen **códigos de estantería** (`Qa76.73.j38`, `005.13/3`), que ensucian
-  los filtros y falsean las recomendaciones →
+- `/isbn/{isbn}.json` answers with a **302** toward the canonical URL → the client
+  follows redirects.
+- Open Library **throttles anonymous traffic** → a dedicated `User-Agent` is sent.
+- Subjects arrive mixed with **shelving codes** (`Qa76.73.j38`, `005.13/3`), which pollute
+  the filters and skew the recommendations →
   [`SubjectSanitizer`](backend/src/main/java/com/libris/book/metadata/SubjectSanitizer.java)
-  los descarta.
+  strips them out.
 
-**Caché.** `@Cacheable` sobre Caffeine (24 h, 1.000 entradas). Los resultados **vacíos no se
-cachean**: un fallo momentáneo del servicio no debe envenenar la caché durante un día.
+**Caching.** `@Cacheable` over Caffeine (24 h, 1,000 entries). Empty results are **never
+cached**: a momentary outage should not poison the cache for a whole day.
 
-**Cuando falla.** El registro del libro **no se rompe**: se guarda con lo que la persona
-escribió. Lo que se escribe a mano siempre gana sobre lo que devuelve el catálogo externo. Si
-no hay datos manuales ni externos, se responde `400 INCOMPLETE_BOOK_DATA` pidiendo el título y
-el autor. La previsualización sí informa el fallo (`503 EXTERNAL_LOOKUP_FAILED`), porque ahí
-el usuario pidió explícitamente los datos externos.
+**When it fails.** Registering the book **does not break**: it saves with whatever the
+person typed. Manual input always wins over what the external catalogue returns. If there
+is neither manual nor external data, the API answers `400 INCOMPLETE_BOOK_DATA` asking
+for a title and an author. The preview endpoint does report the failure
+(`503 EXTERNAL_LOOKUP_FAILED`), because there the caller explicitly asked for external
+data.
 
-> Latencia en el peor caso: 3 s por fuente, 6 s si ninguna responde.
+> Worst-case latency: 3 s per source, 6 s if neither answers.
 
 ---
 
 ## 7. API
 
-Errores siempre con la misma forma:
+Errors always share the same shape:
 
 ```json
 {
@@ -239,202 +253,211 @@ Errores siempre con la misma forma:
 }
 ```
 
-`code` es estable y pensado para que el cliente reaccione a una regla concreta sin leer el mensaje.
+`code` is stable and meant for the client to react to a specific rule without parsing the
+message — which, matching the rest of the interface, is written in Spanish.
 
-| Método | Ruta | Acceso |
+| Method | Path | Access |
 |---|---|---|
-| POST | `/api/auth/register` · `/api/auth/login` | público |
-| GET | `/api/books` · `/api/books/{id}` · `/api/books/subjects` | autenticado |
-| GET | `/api/books/lookup/{isbn}` | autenticado |
-| GET | `/api/books/recommendations` | autenticado |
+| POST | `/api/auth/register` · `/api/auth/login` | public |
+| GET | `/api/books` · `/api/books/{id}` · `/api/books/subjects` | authenticated |
+| GET | `/api/books/lookup/{isbn}` | authenticated |
+| GET | `/api/books/recommendations` | authenticated |
 | POST | `/api/books` | **ADMIN** |
-| DELETE | `/api/books/{id}` | **ADMIN**, solo si `DISPONIBLE` |
-| POST | `/api/loans` · GET `/api/loans/mine` · PUT `/api/loans/{id}/return` | autenticado |
-| POST | `/api/reservations` · GET `/api/reservations/mine` · DELETE `/api/reservations/{id}` | autenticado |
+| DELETE | `/api/books/{id}` | **ADMIN**, only if `DISPONIBLE` |
+| POST | `/api/loans` · GET `/api/loans/mine` · PUT `/api/loans/{id}/return` | authenticated |
+| POST | `/api/reservations` · GET `/api/reservations/mine` · DELETE `/api/reservations/{id}` | authenticated |
 | GET | `/api/admin/stats` | **ADMIN** |
 | GET | `/api/admin/users` · PUT `/api/admin/users/{id}/unblock` | **ADMIN** |
 | POST | `/api/admin/notifications/{due-soon-reminders,overdue-notices}` | **ADMIN** |
 
-**Colección Postman:** [`docs/postman/`](docs/postman) — 30 peticiones con tests, incluida una
-carpeta *Reglas de negocio* con los casos que **deben fallar**. Importa la colección y el
-entorno, ejecuta *Login (ADMIN)* y el token se guarda solo.
+**Postman collection:** [`docs/postman/`](docs/postman) — 30 requests with tests,
+including a *Reglas de negocio* (business rules) folder holding the cases that **must
+fail**. Import the collection and the environment, run *Login (ADMIN)*, and the token
+saves itself.
 
-**Seguridad.** JWT HS256 sobre Spring Security, sin estado, contraseñas con BCrypt.
-`JWT_SECRET` viene por variable de entorno; **si no se define, la aplicación genera una clave
-efímera y lo avisa con un WARN**. Es lo que permite que `docker compose up` sea un solo comando
-sin subir secretos al repositorio, a costa de que los tokens dejen de valer al reiniciar.
+**Security.** JWT HS256 over Spring Security, stateless, passwords hashed with BCrypt.
+`JWT_SECRET` comes from an environment variable; **if it is unset, the application
+generates an ephemeral key and logs a WARN about it**. That is what keeps
+`docker compose up` a single command with no secret ever committed, at the cost of
+invalidating tokens on every restart.
 
 ---
 
 ## 8. Frontend
 
-Angular 21 *standalone*, **zoneless**, con signals, `@if/@for` y rutas cargadas bajo demanda.
-Sin librerías de UI ni de gráficos: el donut y la línea de tendencia son **SVG escritos a mano**.
-Bundle inicial: **~95 kB comprimidos**.
+Angular 21, *standalone*, **zoneless**, with signals, `@if/@for`, and routes loaded on
+demand. No UI or charting library: the doughnut and the trend line are **hand-written
+SVG**. Initial bundle: **~95 kB compressed**.
 
-| Pantalla | Qué resuelve |
+| Screen | What it does |
 |---|---|
-| Login / Registro | validación espejo del backend, «Recordarme» |
-| Inicio | métricas propias, próximos a vencer, recomendaciones |
-| Catálogo | búsqueda, filtros por estado y tema, orden, paginación |
-| Agregar libro | asistente de 3 pasos con autocompletado por ISBN |
-| Mis préstamos | pestañas, cuenta regresiva, devolución |
-| Mis reservas | posición en la fila, cancelar, pedir prestado |
-| Administración | resumen con gráficos, cuentas y bloqueos, catálogo |
+| Login / Register | mirrors the server's validation, "remember me" |
+| Home | own metrics, upcoming due dates, recommendations |
+| Catalogue | search, filters by status and subject, sorting, pagination |
+| Add book | 3-step wizard with ISBN autofill |
+| My loans | tabs, countdown, return action |
+| My reservations | queue position, cancel, borrow |
+| Administration | overview with charts, accounts and blocks, catalogue management |
 
-Un interceptor añade el token a cada llamada a `/api` (y **solo** ahí: las portadas van a
-Open Library y enviarles el token sería filtrarlo). Otro traduce cualquier fallo a un aviso
-visible: no hay errores silenciosos. Cada pantalla tiene sus estados de **carga** (esqueletos
-con la forma del contenido), **error** (con botón de reintento) y **vacío**.
+An interceptor attaches the token to every call to `/api` (and **only** there: cover
+images go to Open Library, and sending them the token would leak it). Another interceptor
+turns any failure into a visible notice — there is no silent error. Every screen has its
+own **loading** (skeletons shaped like the eventual content), **error** (with a retry
+button) and **empty** states.
 
-Los filtros del catálogo viven en la URL (`/catalogo?q=clean&estado=DISPONIBLE`), así que una
-búsqueda se puede compartir y el botón «atrás» hace lo esperable.
+The catalogue filters live in the URL (`/catalogo?q=clean&estado=DISPONIBLE`), so a search
+can be shared as a link and the back button does what you'd expect.
 
-### Recomendaciones
+### Recommendations
 
-Filtrado basado en contenido, el clásico de los sistemas de recomendación: se construye el
-perfil de temas del lector desde su historial (ponderado por antigüedad, con vida media de 180
-días), se pesan los temas por **TF-IDF** —«Software engineering», que está en casi todos los
-libros, vale mucho menos que «Distributed systems»— y se ordena por **similitud coseno**.
+Content-based filtering, the classic baseline for recommender systems: a subject profile
+is built from the reader's loan history (weighted by recency, with an 180-day half-life),
+subjects are weighted with **TF-IDF** — "Software engineering," which appears in almost
+every book, counts for far less than "Distributed systems" — and results are ranked by
+**cosine similarity**.
 
-**Sin ningún servicio externo, sin credenciales y sin costo.** La interfaz explica cada
-sugerencia mostrando los temas en común, y una cuenta sin historial no recibe recomendaciones
-inventadas: simplemente no se muestra el panel.
+**No external service, no credentials, no cost.** The interface explains every suggestion
+by showing the shared subjects, and an account with no history gets no invented
+recommendations: the panel simply does not appear.
 
 ---
 
-## 9. Pruebas
+## 9. Testing
 
 ```bash
 cd backend && ./mvnw verify
 ```
 
-**110 pruebas** (85 unitarias + 25 de integración).
+**126 tests** (101 unit + 25 integration).
 
-| Qué se cubre | Con qué |
+| What it covers | With what |
 |---|---|
-| Reglas de préstamo, atrasos y bloqueo | JUnit + Mockito con `Clock.fixed` |
-| ISBN duplicado, borrado, enriquecimiento | `BookServiceTest` |
-| Open Library: éxito, 404, 500, 429, JSON roto y **timeout** | **MockWebServer** |
-| Endpoints de catálogo y préstamos, roles 401/403 | **MockMvc + Testcontainers** (PostgreSQL real) |
-| Que el correo **sale de verdad**, con asunto y destinatario | **GreenMail** |
+| Loan, overdue and block rules | JUnit + Mockito with `Clock.fixed` |
+| Duplicate ISBN, deletion, enrichment | `BookServiceTest` |
+| Open Library: success, 404, 500, 429, malformed JSON, and **timeout** | **MockWebServer** |
+| Catalogue and loan endpoints, 401/403 by role | **MockMvc + Testcontainers** (real PostgreSQL) |
+| That the e-mail **actually goes out**, with the right subject and recipient | **GreenMail** |
 
-Se prueba contra PostgreSQL real y no H2 porque el esquema usa índices únicos parciales y
-`to_char`: probar sobre otro motor no diría nada de las migraciones que se despliegan.
+Tests run against real PostgreSQL, not H2, because the schema uses partial unique indexes
+and `to_char`: testing against a different engine would say nothing about the migrations
+that actually ship.
 
-> **Nota sobre Windows:** las pruebas de MockWebServer necesitan sockets de *loopback*. En
-> algunos equipos con antivirus estricto fallan con `Unable to establish loopback connection`.
-> En Linux, en Docker y en CI pasan sin problema; si te ocurre, ejecuta la suite dentro de un
-> contenedor.
+> **Note on Windows:** the MockWebServer tests need loopback sockets. On some machines
+> with strict antivirus software they fail with `Unable to establish loopback
+> connection`. They pass without issue on Linux, in Docker and in CI; if this happens to
+> you, run the suite inside a container.
 
 ---
 
-## 10. Decisiones tomadas
+## 10. Decisions taken
 
-El enunciado pide documentar las decisiones en vez de dejar huecos. Estas son.
+The assessment asks for decisions to be documented rather than left as gaps. Here they are.
 
-### Sobre el modelo
+### About the model
 
-**El préstamo se vincula a la cuenta por correo.** El enunciado define `Loan` con
-`borrowerName`/`borrowerEmail` (sin relación a `AppUser`) pero también pide `/api/loans/mine`
-y bloquear cuentas. Se conservan ambos campos como dice el enunciado y se resuelven contra
-`AppUser` por correo: el bloqueo aplica a esa cuenta y `/mine` filtra por el correo autenticado.
-Un ADMIN puede registrar un préstamo a nombre de otra cuenta; un BIBLIOTECARIO solo para sí.
+**The loan links to the account by e-mail.** The specification defines `Loan` with
+`borrowerName`/`borrowerEmail` (no relation to `AppUser`), yet also asks for
+`/api/loans/mine` and for blocking accounts. Both fields are kept exactly as specified and
+resolved against `AppUser` by e-mail: the block applies to that account, and `/mine`
+filters by the authenticated e-mail. An ADMIN may register a loan on behalf of another
+account; a BIBLIOTECARIO only for themselves.
 
-**`RESERVADO` no significa «libre».** Un ejemplar retenido solo puede llevárselo el titular de
-la reserva; la reserva pasa a `CUMPLIDO` automáticamente al registrarse ese préstamo.
+**`RESERVADO` does not mean "free."** A held copy can only be borrowed by the holder of
+the reservation; the reservation moves to `CUMPLIDO` automatically once that loan is
+registered.
 
-### Añadidas al enunciado
+### Added beyond the specification
 
-**Máximo 3 préstamos activos.** No está en el enunciado: viene de la interfaz, que promete
-«puedes tener hasta 3 préstamos activos». Se implementó como regla configurable
-(`LIBRIS_MAX_ACTIVE_LOANS`) en lugar de borrar el texto.
+**Maximum of 3 active loans.** Not in the specification: it comes from the interface,
+which promises "you can have up to 3 active loans." Implemented as a configurable rule
+(`LIBRIS_MAX_ACTIVE_LOANS`) rather than removing the text.
 
-**Aviso de préstamo vencido.** El enunciado pide cuatro correos, pero `Loan` incluye
-`overdueNoticeSentAt`: ese campo solo tiene sentido si algo envía ese aviso y lo registra.
+**Overdue notice e-mail.** The specification asks for four e-mails, but `Loan` includes
+`overdueNoticeSentAt`: that field only makes sense if something actually sends that notice
+and records it.
 
-**Tres endpoints fuera de la lista**, exigidos por las propias reglas y por las pantallas:
-`GET /api/admin/users` y `PUT /api/admin/users/{id}/unblock` (el enunciado pide que un ADMIN
-pueda levantar el bloqueo), `GET /api/reservations/mine` (sin él no existe «Mis reservas») y
-`POST /api/admin/notifications/*` (para poder demostrar las tareas programadas sin esperar a
-las 08:00).
+**Three endpoints outside the listed set**, required by the rules themselves and by the
+screens: `GET /api/admin/users` and `PUT /api/admin/users/{id}/unblock` (the specification
+requires that an ADMIN be able to lift a block), `GET /api/reservations/mine` (without it
+"My reservations" cannot exist), and `POST /api/admin/notifications/*` (to demonstrate the
+scheduled jobs without waiting for 08:00).
 
-### Correcciones al diseño recibido
+### Corrections to the reference design
 
-El diseño de referencia tenía elementos que contradicen las reglas o que no pide el enunciado.
-Lo que se hizo:
+The reference design had elements that contradict the rules or that the specification
+does not ask for. What was done about each:
 
-| En el diseño | Qué se hizo | Por qué |
+| In the design | What was done | Why |
 |---|---|---|
-| Sección ADMINISTRACIÓN visible para un bibliotecario | Se oculta salvo para ADMIN | Solo ADMIN registra libros y ve estadísticas |
-| KPIs globales en «Inicio» | «Inicio» muestra métricas **propias** | `/api/admin/stats` es ADMIN-only: un bibliotecario vería solo 403 |
-| «Marcar como recibido» en una reserva | Se reemplaza por **«Pedir prestado»** | No existe tal endpoint; la reserva se cierra sola al prestar |
-| Donut con «Por vencer» dentro de «Activos» sumando 100 % | Cuatro estados **mutuamente excluyentes** | Si no, los porcentajes cuentan dos veces el mismo préstamo |
-| Total 2.148 ≠ Disponibles 1.258 + Prestados 138 | Total = disponibles + prestados + reservados | Coherencia aritmética |
-| Login con Google, recuperar contraseña | Eliminados | No los pide el enunciado y exigirían credenciales OAuth en el repositorio |
-| Campana de notificaciones, «Actividad reciente», «Configuración» | Eliminados | Requerirían entidades que nadie pide |
-| Faltaban registro, «Reservar» y «Eliminar libro» | Añadidos | El enunciado sí exige esos endpoints |
+| ADMINISTRACIÓN section visible to a librarian | Hidden unless ADMIN | Only ADMIN registers books and sees statistics |
+| Global KPIs on "Inicio" | "Inicio" shows the reader's **own** metrics | `/api/admin/stats` is ADMIN-only: a librarian would see nothing but 403s |
+| "Marcar como recibido" on a reservation | Replaced with **"Pedir prestado"** | No such endpoint exists; the reservation closes itself once the loan is registered |
+| Doughnut with "Por vencer" nested inside "Activos" summing to 100% | Four **mutually exclusive** states | Otherwise the percentages count the same loan twice |
+| Total 2,148 ≠ Available 1,258 + Borrowed 138 | Total = available + borrowed + reserved | Arithmetic consistency |
+| Google sign-in, password recovery | Removed | Not requested, and would require OAuth credentials committed to the repository |
+| Notification bell, "Actividad reciente," "Configuración" | Removed | Would need entities nobody asked for |
+| Registration, "Reservar" and "Eliminar libro" were missing | Added | The specification does require those endpoints |
 
-### Técnicas
+### Technical choices
 
-- **Spring Boot 3.5**, no 4.x: la línea 3.x es la madura para springdoc y Testcontainers, y el
-  enunciado pide «3.3+».
-- **Sin Lombok**: `record` para los DTOs y accesores explícitos en las entidades. Menos magia
-  en un proyecto que se lee para evaluarlo.
-- **Nulos explícitos en el JSON**: `returnDate` viaja como `null` en vez de desaparecer, para
-  que el cliente distinga «sin devolver» de «campo ausente».
-- **El health check no depende del SMTP**: la API es perfectamente usable con el correo caído,
-  porque los envíos son asíncronos.
+- **Spring Boot 3.5**, not 4.x: the 3.x line is the mature choice for springdoc and
+  Testcontainers, and the assessment asks for "3.3+".
+- **No Lombok**: `record` for DTOs and explicit accessors on the entities. Less magic in a
+  project meant to be read for evaluation.
+- **Explicit nulls in the JSON**: `returnDate` travels as `null` rather than disappearing,
+  so the client can tell "not returned yet" apart from "field absent."
+- **The health check does not depend on SMTP**: the API is perfectly usable with mail
+  down, because delivery is asynchronous.
 
 ---
 
-## 11. Variables de entorno
+## 11. Environment variables
 
-Todas tienen valor por defecto: `docker compose up` funciona sin crear ningún archivo. Para
-personalizar, copia [`.env.example`](.env.example) a `.env`.
+Every one of them has a default: `docker compose up` works with no file to create. To
+customise, copy [`.env.example`](.env.example) to `.env`.
 
-| Variable | Por defecto | Para qué |
+| Variable | Default | What for |
 |---|---|---|
-| `FRONTEND_PORT` / `BACKEND_PORT` | `4200` / `8080` | puertos publicados |
-| `POSTGRES_DB` / `_USER` / `_PASSWORD` | `libris` | base de datos |
-| `JWT_SECRET` | *(vacío)* | clave HS256; vacío ⇒ efímera + WARN |
-| `JWT_EXPIRATION_MINUTES` | `480` | vigencia del token |
-| `SPRING_PROFILES_ACTIVE` | `demo` | `default` para arrancar sin datos de ejemplo |
-| `MAIL_HOST` / `MAIL_PORT` | `mailhog` / `1025` | servidor SMTP |
-| `LIBRIS_LOAN_DAYS` | `14` | duración del préstamo |
-| `LIBRIS_MAX_ACTIVE_LOANS` | `3` | préstamos simultáneos |
-| `LIBRIS_DUE_SOON_DAYS` | `3` | ventana de «por vencer» |
-| `LIBRIS_REMINDER_DAYS_BEFORE` | `2` | antelación del recordatorio |
-| `LIBRIS_OVERDUE_LIMIT` | `3` | atrasos que bloquean |
-| `LIBRIS_OVERDUE_WINDOW_DAYS` | `90` | ventana móvil de atrasos |
-| `LIBRIS_BLOCK_DAYS` | `7` | duración del bloqueo |
-| `TZ` | `America/Santiago` | las fechas límite son fechas de negocio |
+| `FRONTEND_PORT` / `BACKEND_PORT` | `4200` / `8080` | published ports |
+| `POSTGRES_DB` / `_USER` / `_PASSWORD` | `libris` | database |
+| `JWT_SECRET` | *(empty)* | HS256 key; empty ⇒ ephemeral + WARN |
+| `JWT_EXPIRATION_MINUTES` | `480` | token lifetime |
+| `SPRING_PROFILES_ACTIVE` | `demo` | `default` to start with no sample data |
+| `MAIL_HOST` / `MAIL_PORT` | `mailhog` / `1025` | SMTP server |
+| `LIBRIS_LOAN_DAYS` | `14` | loan length |
+| `LIBRIS_MAX_ACTIVE_LOANS` | `3` | simultaneous loans |
+| `LIBRIS_DUE_SOON_DAYS` | `3` | "due soon" window |
+| `LIBRIS_REMINDER_DAYS_BEFORE` | `2` | reminder lead time |
+| `LIBRIS_OVERDUE_LIMIT` | `3` | strikes that trigger a block |
+| `LIBRIS_OVERDUE_WINDOW_DAYS` | `90` | rolling window for strikes |
+| `LIBRIS_BLOCK_DAYS` | `7` | how long the block lasts |
+| `TZ` | `America/Santiago` | due dates are business dates |
 
 ---
 
-## 12. Desarrollo sin Docker
+## 12. Developing without Docker
 
 ```bash
-# Base de datos y buzón
+# Database and mailbox
 docker compose up -d postgres mailhog
 
-# Backend (requiere JDK 21)
+# Backend (requires JDK 21)
 cd backend && ./mvnw spring-boot:run
 
-# Frontend (requiere Node 20.19+/22.12+/24+)
+# Frontend (requires Node 20.19+/22.12+/24+)
 cd frontend && npm install && npm start
 ```
 
-`npm start` levanta Angular en el 4200 y redirige `/api` al 8080 mediante
+`npm start` serves Angular on port 4200 and proxies `/api` to port 8080 via
 [`proxy.conf.json`](frontend/proxy.conf.json).
 
 ---
 
 ## 13. Git
 
-Se trabajó con **GitFlow**: `main` ← `release/*` ← `develop` ← `feature/*` y `fix/*`, con
-merges `--no-ff` para conservar la historia de cada rama. Los commits son cortos y en inglés,
-con estilo *conventional commits*.
+Built with **GitFlow**: `main` ← `release/*` ← `develop` ← `feature/*` and `fix/*`, merged
+with `--no-ff` to keep each branch's history intact. Commits are short, in English, and
+follow a *conventional commits* style.
 
 ```bash
 git log --graph --oneline --all
